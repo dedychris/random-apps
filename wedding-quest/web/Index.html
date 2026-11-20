@@ -1,0 +1,1032 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<base target="_top">
+<title>Wedding Quest</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Jua&family=Nunito:wght@500;700;800&family=Gowun+Dodum&display=swap">
+<style>
+/* Layout: a phone-shaped game screen (max 640px) over a grass field; sticky resource HUD on top, chunky tab bar fixed at bottom. Single deliberate daytime look. */
+:root {
+  --grass: #BCDD93; --grass-2: #A9D07E; --grass-3: #86B862;
+  --cream: #FFF8E6; --cream-2: #FBEAC6; --paper: #FFFDF6;
+  --ink: #5A3A2C; --ink-soft: #8C6B58; --line: #5A3A2C;
+  --pink: #F8BFCB; --pink-2: #F39AAE; --rose: #E0647F;
+  --mint: #A3DCCF; --sky: #8FC7EA; --purple: #A47AD8; --purple-2: #8559BF;
+  --gold: #F5C34E; --gold-2: #E3A126; --red: #E2574A; --ok: #58B36B;
+  --st-todo: #E9DCC5; --st-progress: #9CD0F0; --st-pending: #F8D57A; --st-review: #CDB4F0; --st-done: #9FDCA8;
+  --f-display: "Jua", "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", ui-rounded, system-ui, sans-serif;
+  --f-body: "Nunito", "Gowun Dodum", "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --r-lg: 22px; --r-md: 16px; --r-sm: 11px;
+  --press: 0 4px 0 var(--line);
+  color-scheme: light;
+}
+* { box-sizing: border-box; }
+html, body { min-height: 100%; }
+body {
+  margin: 0; color: var(--ink); font-family: var(--f-body); font-size: 15px; line-height: 1.45;
+  background-color: var(--grass);
+  background-image:
+    radial-gradient(circle at 12% 18%, var(--grass-2) 0 3px, transparent 4px),
+    radial-gradient(circle at 70% 60%, var(--grass-2) 0 3px, transparent 4px),
+    radial-gradient(circle at 40% 85%, var(--grass-2) 0 2px, transparent 3px);
+  background-size: 120px 120px, 160px 160px, 90px 90px;
+}
+body::before { content: ""; position: fixed; inset: 0 0 auto; height: env(safe-area-inset-top, 0px); z-index: 30; background: var(--grass); }
+button, input, select, textarea { font: inherit; color: inherit; }
+:focus-visible { outline: 3px solid var(--purple-2); outline-offset: 2px; }
+h1, h2, h3, .display { font-family: var(--f-display); font-weight: 400; letter-spacing: .01em; margin: 0; text-wrap: balance; }
+a { color: var(--purple-2); }
+
+.app { max-width: 640px; margin: 0 auto; padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); padding-block: 0 120px; }
+
+/* HUD */
+.hud { position: sticky; top: env(safe-area-inset-top, 0px); z-index: 20; display: flex; gap: 8px; align-items: center; padding-block: 10px; background: linear-gradient(var(--grass) 70%, transparent); }
+.pill { display: flex; align-items: center; gap: 6px; min-width: 0; flex: 1 1 0; height: 38px; padding: 0 10px 0 4px; background: var(--cream); border: 3px solid var(--line); border-radius: 12px; font-family: var(--f-display); font-size: 16px; box-shadow: 0 3px 0 var(--line); white-space: nowrap; }
+.pill .ic { flex: none; width: 26px; height: 26px; display: grid; place-items: center; }
+.pill .val { overflow: hidden; text-overflow: ellipsis; font-variant-numeric: tabular-nums; }
+.pill.dday { flex: 0 0 auto; background: var(--pink); }
+.roundbtn { flex: none; width: 40px; height: 40px; border-radius: 50%; border: 3px solid var(--line); background: var(--cream); box-shadow: 0 3px 0 var(--line); font-family: var(--f-display); font-size: 15px; cursor: pointer; display: grid; place-items: center; padding: 0; }
+.roundbtn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.sync { position: relative; }
+.sync::after { content: ""; position: absolute; right: -2px; top: -2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: var(--gold); }
+.sync[data-s="shared"]::after { background: var(--ok); }
+.sync[data-s="local"]::after, .sync[data-s="ro"]::after, .sync[data-s="off"]::after { background: var(--red); }
+
+/* Panels & buttons */
+.panel { background: var(--cream); border: 3px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--press); padding: 14px; }
+.btn { display: inline-flex; align-items: center; justify-content: center; gap: 6px; padding: 9px 16px; border: 3px solid var(--line); border-radius: 14px; background: var(--cream); box-shadow: 0 3px 0 var(--line); font-family: var(--f-display); font-size: 16px; cursor: pointer; text-decoration: none; color: var(--ink); }
+.btn:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.btn.pink { background: var(--pink); } .btn.mint { background: var(--mint); } .btn.gold { background: var(--gold); } .btn.purple { background: var(--purple); color: #fff; }
+.btn.small { padding: 5px 11px; font-size: 14px; border-width: 2px; border-radius: 11px; }
+.btn[disabled] { opacity: .5; cursor: not-allowed; }
+.row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.stack { display: grid; gap: 12px; }
+.muted { color: var(--ink-soft); }
+.small { font-size: 13px; }
+.banner { border-radius: var(--r-md); border: 2px dashed var(--line); background: var(--paper); padding: 10px 12px; font-size: 13px; }
+
+/* Stage bar */
+.stage { padding: 10px 14px 12px; background: rgba(255, 253, 246, .72); border: 3px solid var(--line); border-radius: var(--r-lg); }
+.stage-top { display: flex; justify-content: space-between; align-items: baseline; gap: 8px; margin-bottom: 8px; }
+.stage-top h2 { font-size: 18px; }
+.bar { position: relative; height: 20px; border: 3px solid var(--line); border-radius: 12px; background: #9C7A5E; overflow: visible; }
+.bar > i { position: absolute; inset: 0 auto 0 0; border-radius: 8px; background: linear-gradient(#9FE07C, #6CC04F); transition: width .5s ease; }
+.chest { position: absolute; top: 50%; width: 30px; height: 30px; transform: translate(-50%, -50%); }
+.xpbar { height: 10px; border: 2px solid var(--line); border-radius: 8px; background: var(--cream-2); overflow: hidden; }
+.xpbar > i { display: block; height: 100%; background: var(--gold); }
+
+/* Scene */
+.scene { position: relative; height: 270px; margin-top: 10px; }
+.scene .tree { position: absolute; width: 130px; }
+.scene .cats { position: absolute; left: 50%; bottom: 6px; transform: translateX(-50%); display: flex; align-items: flex-end; gap: 2px; }
+.cat { width: 96px; height: auto; display: block; }
+.cats.cheer .cat { animation: hop .5s ease 2; }
+.cats.cheer .cat.bride { animation-delay: .12s; }
+@keyframes hop { 50% { transform: translateY(-18px); } }
+.heart { width: 26px; margin-bottom: 70px; animation: float 2.4s ease-in-out infinite; }
+@keyframes float { 50% { transform: translateY(-6px); } }
+.bubble { position: absolute; left: 50%; top: 4px; transform: translateX(-50%); width: min(330px, 92%); background: var(--purple); color: #fff; border: 3px solid var(--line); border-radius: 18px; padding: 9px 12px 10px; box-shadow: var(--press); }
+.bubble::after { content: ""; position: absolute; left: 50%; bottom: -13px; width: 18px; height: 18px; background: var(--purple); border-right: 3px solid var(--line); border-bottom: 3px solid var(--line); transform: translateX(-50%) rotate(45deg); }
+.bubble h3 { font-size: 14px; opacity: .9; margin-bottom: 4px; }
+.bubble button { all: unset; display: flex; gap: 8px; width: 100%; padding: 3px 0; cursor: pointer; font-size: 14px; font-weight: 700; }
+.bubble button:focus-visible { outline: 2px solid #fff; }
+.bubble .dd { flex: none; min-width: 52px; font-family: var(--f-display); font-weight: 400; color: var(--gold); font-variant-numeric: tabular-nums; }
+.bubble .tt { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* Area map */
+.sec-h { display: flex; justify-content: space-between; align-items: center; gap: 8px; margin: 18px 2px 10px; }
+.sec-h h2 { font-size: 20px; text-shadow: 0 2px 0 var(--cream); }
+.areas { display: grid; grid-template-columns: repeat(auto-fill, minmax(140px, 1fr)); gap: 10px; }
+.area { all: unset; box-sizing: border-box; cursor: pointer; display: grid; grid-template-columns: 42px 1fr; gap: 4px 8px; align-items: center; padding: 10px; background: var(--cream); border: 3px solid var(--line); border-radius: var(--r-md); box-shadow: 0 3px 0 var(--line); }
+.area:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.area .em { grid-row: span 2; width: 42px; height: 42px; display: grid; place-items: center; font-size: 22px; background: var(--paper); border: 2px solid var(--line); border-radius: 50%; }
+.area b { font-family: var(--f-display); font-weight: 400; font-size: 15px; line-height: 1.15; }
+.area .mini { height: 8px; border: 2px solid var(--line); border-radius: 6px; background: var(--cream-2); overflow: hidden; }
+.area .mini i { display: block; height: 100%; background: var(--ok); }
+.area.done { background: var(--st-done); }
+.area .cnt { grid-column: 2; font-size: 12px; color: var(--ink-soft); font-variant-numeric: tabular-nums; }
+
+/* Chips & filters */
+.chips { display: flex; gap: 6px; overflow-x: auto; padding: 2px 2px 6px; scrollbar-width: none; }
+.chip { flex: none; padding: 5px 12px; border: 2px solid var(--line); border-radius: 999px; background: var(--cream); font-family: var(--f-display); font-size: 14px; cursor: pointer; }
+.chip[aria-pressed="true"] { background: var(--pink); }
+.tag { display: inline-flex; align-items: center; gap: 3px; padding: 1px 8px; border-radius: 999px; border: 2px solid var(--line); font-size: 12px; font-weight: 800; background: var(--paper); white-space: nowrap; }
+.tag.late { background: var(--red); color: #fff; }
+.tag.tight { background: var(--gold); }
+.tag.xp { background: var(--cream-2); }
+.tag.who { background: var(--mint); }
+
+/* Quest card */
+.qlist { display: grid; gap: 10px; }
+.q { display: grid; grid-template-columns: 40px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 10px 10px 10px 10px; background: var(--paper); border: 3px solid var(--line); border-radius: var(--r-md); box-shadow: 0 3px 0 var(--line); }
+.q.is-done { background: #EAF7EA; }
+.q.is-done .qt { text-decoration: line-through; text-decoration-thickness: 2px; color: var(--ink-soft); }
+.q .em { width: 40px; height: 40px; display: grid; place-items: center; font-size: 19px; border: 2px solid var(--line); border-radius: 50%; background: var(--cream); }
+.q .main { all: unset; cursor: pointer; min-width: 0; display: grid; gap: 4px; }
+.q .qt { font-weight: 800; font-size: 15px; line-height: 1.25; }
+.q .meta { display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 12px; }
+.q .due { font-variant-numeric: tabular-nums; font-weight: 700; color: var(--ink-soft); }
+.st { appearance: none; -webkit-appearance: none; border: 2px solid var(--line); border-radius: 12px; padding: 6px 24px 6px 10px; font-family: var(--f-display); font-size: 13px; cursor: pointer; max-width: 128px;
+  background: var(--st-todo) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%235A3A2C'/%3E%3C/svg%3E") no-repeat right 8px center; }
+.st[data-v="progress"] { background-color: var(--st-progress); } .st[data-v="pending"] { background-color: var(--st-pending); }
+.st[data-v="review"] { background-color: var(--st-review); } .st[data-v="done"] { background-color: var(--st-done); }
+.st:disabled { cursor: default; opacity: .8; }
+.empty { text-align: center; padding: 22px 12px; }
+
+/* Lists for gold / guests / vendors */
+.tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(130px, 1fr)); gap: 10px; }
+.tile { background: var(--paper); border: 3px solid var(--line); border-radius: var(--r-md); padding: 10px 12px; }
+.tile .k { font-size: 12px; color: var(--ink-soft); font-weight: 800; letter-spacing: .03em; }
+.tile .v { font-family: var(--f-display); font-size: 20px; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.item { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 4px 10px; padding: 10px 12px; background: var(--paper); border: 3px solid var(--line); border-radius: var(--r-md); box-shadow: 0 3px 0 var(--line); cursor: pointer; text-align: left; width: 100%; }
+.item:active { transform: translateY(2px); box-shadow: 0 1px 0 var(--line); }
+.item b { font-weight: 800; }
+.item .r { text-align: right; font-variant-numeric: tabular-nums; font-weight: 800; }
+.item .sub { grid-column: 1 / -1; display: flex; flex-wrap: wrap; gap: 4px; align-items: center; font-size: 12px; color: var(--ink-soft); }
+.catbars { display: grid; gap: 6px; }
+.catbar { display: grid; grid-template-columns: 96px minmax(0, 1fr) auto; gap: 8px; align-items: center; font-size: 13px; }
+.catbar .track { height: 12px; border: 2px solid var(--line); border-radius: 7px; background: var(--cream-2); overflow: hidden; }
+.catbar .track i { display: block; height: 100%; background: var(--gold); }
+.catbar .n { font-variant-numeric: tabular-nums; font-weight: 700; }
+.search { width: 100%; padding: 9px 12px; border: 3px solid var(--line); border-radius: 14px; background: var(--paper); }
+
+/* Forms */
+.form { display: grid; gap: 12px; }
+.f { display: grid; gap: 4px; min-width: 0; }
+.f > span { font-size: 12px; font-weight: 800; color: var(--ink-soft); letter-spacing: .03em; }
+.f input, .f select, .f textarea { width: 100%; padding: 9px 11px; border: 2px solid var(--line); border-radius: 12px; background: var(--paper); min-width: 0; }
+.f textarea { min-height: 90px; resize: vertical; }
+.grid2 { display: grid; grid-template-columns: repeat(auto-fit, minmax(170px, 1fr)); gap: 12px; }
+.seg { display: flex; flex-wrap: wrap; gap: 6px; }
+.seg label { cursor: pointer; }
+.seg input { position: absolute; opacity: 0; pointer-events: none; }
+.seg span { display: inline-block; padding: 6px 12px; border: 2px solid var(--line); border-radius: 999px; background: var(--paper); font-family: var(--f-display); font-size: 14px; }
+.seg input:checked + span { background: var(--pink); }
+.seg input:focus-visible + span { outline: 3px solid var(--purple-2); outline-offset: 2px; }
+.checks { display: flex; flex-wrap: wrap; gap: 6px 14px; }
+.checks label { display: flex; gap: 6px; align-items: center; font-weight: 700; font-size: 14px; }
+fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.person { padding: 12px; border: 2px dashed var(--line); border-radius: var(--r-md); background: var(--paper); }
+.person h3 { font-size: 16px; margin-bottom: 8px; display: flex; align-items: center; gap: 6px; }
+
+/* Tab bar */
+.tabbar { position: fixed; left: 0; right: 0; bottom: 0; z-index: 25; padding: 8px max(16px, env(safe-area-inset-right, 0px)) calc(8px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); background: linear-gradient(transparent, var(--grass) 35%); }
+.tabbar-in { max-width: 640px; margin: 0 auto; display: grid; grid-template-columns: repeat(5, 1fr); gap: 6px; padding: 6px; background: var(--cream); border: 3px solid var(--line); border-radius: 22px; box-shadow: var(--press); }
+.tab { all: unset; cursor: pointer; display: grid; justify-items: center; gap: 1px; padding: 5px 2px; border-radius: 15px; font-family: var(--f-display); font-size: 13px; }
+.tab .ti { width: 30px; height: 30px; display: grid; place-items: center; }
+.tab[aria-current="page"] { background: var(--pink); box-shadow: inset 0 0 0 2px var(--line); }
+.tab:focus-visible { outline: 3px solid var(--purple-2); }
+
+/* Sheet */
+.sheet-wrap { position: fixed; inset: 0; z-index: 40; display: grid; align-items: end; justify-items: center; background: rgba(60, 38, 28, .42); }
+.sheet { width: min(640px, 100%); max-height: 88vh; overflow-y: auto; background: var(--cream); border: 3px solid var(--line); border-bottom: 0; border-radius: 26px 26px 0 0; padding: 18px max(16px, env(safe-area-inset-right, 0px)) calc(22px + env(safe-area-inset-bottom, 0px)) max(16px, env(safe-area-inset-left, 0px)); animation: up .22s ease; }
+@keyframes up { from { transform: translateY(40px); opacity: .4; } }
+.sheet-h { display: flex; gap: 10px; align-items: flex-start; justify-content: space-between; margin-bottom: 12px; }
+.sheet-h h2 { font-size: 21px; line-height: 1.2; }
+.sheet .alt { font-family: var(--f-body); font-size: 13px; color: var(--ink-soft); margin-top: 2px; }
+.desc { background: var(--paper); border: 2px solid var(--line); border-radius: var(--r-md); padding: 12px; white-space: pre-line; max-width: 65ch; }
+
+/* Toast + petals */
+.toast { position: fixed; left: 50%; top: calc(64px + env(safe-area-inset-top, 0px)); z-index: 50; transform: translateX(-50%); padding: 8px 16px; background: var(--gold); border: 3px solid var(--line); border-radius: 14px; font-family: var(--f-display); font-size: 17px; box-shadow: var(--press); pointer-events: none; animation: pop .25s ease; max-width: calc(100% - 32px); text-align: center; }
+@keyframes pop { from { transform: translate(-50%, -8px) scale(.9); opacity: 0; } }
+.petal { position: fixed; top: -20px; z-index: 45; width: 14px; height: 11px; border-radius: 70% 0 70% 0; background: var(--pink-2); border: 1.5px solid var(--rose); pointer-events: none; animation: fall linear forwards; }
+@keyframes fall { to { transform: translate(var(--dx), 105vh) rotate(540deg); } }
+.badges { display: flex; gap: 8px; flex-wrap: wrap; }
+.badge { width: 50px; height: 50px; border-radius: 50%; display: grid; place-items: center; font-size: 22px; border: 3px solid var(--line); background: var(--gold); box-shadow: 0 3px 0 var(--line); }
+.badge.locked { background: var(--cream-2); filter: grayscale(1); opacity: .45; }
+.src li { margin-bottom: 4px; overflow-wrap: anywhere; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation: none !important; transition: none !important; }
+  .petal { display: none; }
+}
+@media (max-width: 420px) {
+  .xpv { display: none; }
+  .pill { font-size: 14px; padding-right: 7px; }
+  .cat { width: 84px; }
+  .q { grid-template-columns: 34px minmax(0, 1fr); }
+  .q .em { width: 34px; height: 34px; font-size: 16px; }
+  .q .st { grid-column: 2; justify-self: start; }
+}
+</style>
+</head>
+<body>
+
+<div class="app">
+  <header class="hud" id="hud"></header>
+  <main id="view" class="stack"></main>
+</div>
+<nav class="tabbar" aria-label="Menu"><div class="tabbar-in" id="tabs"></div></nav>
+<div id="sheetRoot"></div>
+<div id="toastRoot" aria-live="polite"></div>
+
+<script>
+"use strict";
+const DATA = {"areas":[{"id":"plan","icon":"🗺️","t":["Desa Rencana","계획 마을"],"d":["Fondasi: tanggal, budget, keluarga, konsep.","기초 다지기: 날짜, 예산, 가족, 콘셉트."]},{"id":"legal","icon":"📜","t":["Hutan Dokumen","서류의 숲"],"d":["Semua urusan surat dan pencatatan resmi dua negara.","두 나라의 서류와 혼인 등록 업무."]},{"id":"vendor","icon":"🛍️","t":["Pasar Vendor","업체 시장"],"d":["Booking venue, foto, busana, dan kawan-kawan.","웨딩홀, 사진, 의상 등 업체 예약."]},{"id":"adat","icon":"🏮","t":["Kuil Adat","전통 사당"],"d":["Rangkaian adat Tionghoa dan Korea.","중국계 전통과 한국 전통 예식."]},{"id":"detail","icon":"🌷","t":["Taman Detail","디테일 정원"],"d":["Prewedding, undangan, seserahan, rundown.","웨딩 촬영, 청첩장, 예단, 식순."]},{"id":"final","icon":"🌉","t":["Jembatan Final","마지막 다리"],"d":["Minggu-minggu terakhir sebelum Hari H.","D-Day 직전 마지막 몇 주."]},{"id":"boss","icon":"🏰","t":["Istana Hari H","D-Day 궁전"],"d":["Boss battle: hari pernikahan!","보스전: 결혼식 당일!"]},{"id":"after","icon":"🏝️","t":["Pulau Setelah Nikah","결혼 후 섬"],"d":["Lapor ke negara lain, visa, dan beres-beres.","상대국 신고, 비자, 마무리."]}],"quests":[{"id":"p01","a":"plan","w":"both","b":350,"m":120,"xp":30,"t":["Tetapkan tanggal & kota pernikahan","결혼 날짜와 도시 정하기"],"d":["Cek kalender libur kedua negara (Lebaran, Natal, Imlek, 설날, 추석) dan jadwal cuti keluarga. Isi tanggal di menu Atur supaya semua deadline dihitung otomatis.","두 나라의 공휴일(르바란, 크리스마스, 설날, 추석)과 가족 휴가 일정을 확인하세요. '설정'에 날짜를 넣으면 모든 마감일이 자동 계산돼요."]},{"id":"p02","a":"plan","w":"both","b":345,"m":110,"xp":40,"t":["Sepakati total budget & pembagiannya","총예산과 분담 방식 정하기"],"d":["Di Indonesia biaya resepsi sering ditanggung keluarga atau dibagi; di Korea biasanya dibagi dua dan tamu memberi 축의금. Tulis angka totalnya di tab Gold.","인도네시아에서는 피로연 비용을 가족이 부담하거나 나누는 경우가 많고, 한국은 보통 반반 부담하며 하객이 축의금을 내요. 총액은 '골드' 탭에 적어 두세요."]},{"id":"p03","a":"plan","w":"both","b":330,"m":90,"xp":60,"t":["Pertemuan dua keluarga (lamaran / 상견례)","양가 상견례 (라마란)"],"d":["Bahas tanggal, adat yang dipakai, dan pembagian biaya. Siapkan penerjemah kalau orang tua tidak berbicara bahasa yang sama.","날짜, 예식 방식, 비용 분담을 이야기해요. 부모님끼리 언어가 다르면 통역을 준비하세요."]},{"id":"p04","a":"plan","w":"both","b":320,"m":100,"xp":30,"t":["Pilih konsep & adat","콘셉트와 예식 스타일 정하기"],"d":["Adat Indonesia (Jawa, Sunda, Batak, dll), modern, atau dipadu dengan 폐백 Korea? Konsep ini menentukan venue, busana, dan rundown.","인도네시아 전통(자와, 순다, 바탁 등), 모던, 또는 한국 폐백과 함께? 콘셉트에 따라 장소·의상·식순이 달라져요."]},{"id":"p05","a":"plan","w":"both","b":320,"m":100,"xp":30,"t":["Perkiraan jumlah tamu","하객 수 대략 정하기"],"d":["Angka kasar dulu (misalnya 300 orang di Indonesia, 150 orang di Korea). Angka ini menentukan venue dan budget. Isi detailnya di tab Tamu.","먼저 대략적인 숫자를 정해요(예: 인도네시아 300명, 한국 150명). 장소와 예산이 이 숫자로 정해져요. 자세한 명단은 '하객' 탭에."]},{"id":"p06","a":"plan","w":"both","b":330,"m":120,"xp":20,"c":"nonID || cerKR || mixedNat","t":["Cek masa berlaku paspor","여권 유효기간 확인"],"d":["Paspor sebaiknya masih berlaku minimal 6 bulan setelah tanggal perjalanan. Perpanjang sekarang kalau mepet, karena prosesnya bisa berminggu-minggu.","여권은 여행일 기준 최소 6개월 이상 남아 있어야 해요. 얼마 안 남았다면 지금 갱신하세요. 몇 주가 걸릴 수 있어요."]},{"id":"p07","a":"plan","w":"both","b":200,"m":60,"xp":30,"c":"mixedNat","t":["Samakan ejaan nama di semua dokumen","모든 서류의 이름 표기 통일"],"d":["Nama di paspor, akta lahir, dan dokumen Korea harus sama persis. Kalau romanisasi nama Korea berbeda antar dokumen, kantor pencatat bisa minta surat keterangan orang yang sama (동일인 확인서).","여권·출생증명서·한국 서류의 이름이 정확히 같아야 해요. 영문 표기가 서로 다르면 동일인 확인서를 요구받을 수 있어요."]},{"id":"p08","a":"plan","w":"both","b":300,"m":75,"xp":40,"t":["Konsultasi awal ke kantor pencatat","혼인 등록 기관에 사전 문의"],"d":["Datangi atau telepon KUA / Dukcapil / 구청 dan kedutaan terkait untuk minta daftar syarat terbaru. Syarat bisa berbeda per kota dan sering berubah. Catat nama petugas dan jawabannya di catatan quest ini.","KUA·Dukcapil·구청과 관련 대사관에 최신 서류 목록을 문의하세요. 지역마다 다르고 자주 바뀌어요. 담당자 이름과 답변을 이 퀘스트 메모에 적어 두세요."]},{"id":"p09","a":"plan","w":"both","b":340,"m":120,"xp":100,"c":"regID && (mixedRel || noRel)","t":["Tentukan jalur: beda agama / tanpa agama","종교가 다를 때의 진행 방법 정하기"],"d":["Di Indonesia perkawinan sah kalau dilakukan menurut agama, dan sejak SEMA No. 2/2023 pengadilan diminta tidak mengabulkan pencatatan nikah beda agama. Pilihan yang umum: (1) salah satu memeluk agama pasangannya, (2) Katolik bisa mengajukan dispensasi beda agama ke keuskupan, tetapi pencatatan sipilnya tetap perlu dicek, (3) mencatatkan pernikahan secara sipil di Korea lalu melapor ke KBRI dan Dukcapil; status pencatatannya di Indonesia bisa dipersoalkan, jadi konsultasikan ke notaris atau advokat. Setelah memutuskan, ubah agama di menu Atur dan quest akan menyesuaikan.","인도네시아에서는 종교 의식에 따른 혼인만 유효하고, 2023년 대법원 회람(SEMA 2/2023) 이후 종교가 다른 혼인의 등록이 사실상 어려워요. 흔한 선택지: (1) 한 사람이 상대의 종교를 따름, (2) 가톨릭은 교구에 관면을 신청할 수 있지만 민사 등록은 따로 확인 필요, (3) 한국에서 혼인신고 후 인도네시아 대사관과 Dukcapil에 신고(인정 여부가 문제될 수 있어 변호사 상담 권장). 결정한 뒤 '설정'에서 종교를 바꾸면 퀘스트가 자동으로 바뀌어요."]},{"id":"p10","a":"plan","w":"both","b":300,"m":60,"xp":40,"c":"mixedNat && hasID","t":["Diskusikan perjanjian perkawinan (prenup)","혼전 재산 계약(프리넙) 논의"],"d":["WNI yang menikah dengan WNA tanpa perjanjian pisah harta tidak bisa memegang tanah atau rumah berstatus Hak Milik (UUPA Pasal 21). Prenup bisa dibuat sebelum atau sesudah menikah (Putusan MK 69/2015), tapi lebih praktis sebelum.","외국인과 결혼한 인도네시아 국민은 재산 분리 계약이 없으면 토지·주택 소유권(Hak Milik)을 가질 수 없어요(토지기본법 21조). 결혼 전후 모두 작성할 수 있지만 결혼 전에 하는 게 편해요."]},{"id":"p11","a":"plan","w":"both","b":290,"m":60,"xp":20,"c":"mixedNat","t":["Tentukan rencana tinggal setelah menikah","결혼 후 거주 국가 정하기"],"d":["Indonesia atau Korea? Pilihan ini menentukan visa / izin tinggal yang perlu diurus. Isi di menu Atur.","인도네시아? 한국? 이에 따라 필요한 비자·체류 허가가 달라져요. '설정'에서 선택하세요."]},{"id":"k01","a":"legal","w":"KR","b":150,"m":50,"xp":40,"c":"regID && hasKR","t":["Terbitkan 기본증명서·가족관계증명서·혼인관계증명서 (상세)","기본·가족관계·혼인관계증명서(상세) 발급"],"d":["Bisa online di 대법원 전자가족관계등록시스템 atau 정부24, di 주민센터, atau di Kedutaan Korea. Pilih versi 상세 (detail). Banyak kantor hanya menerima dokumen yang terbit 3 sampai 6 bulan terakhir, jadi jangan terlalu awal.","대법원 전자가족관계등록시스템, 정부24, 주민센터 또는 재외공관에서 발급할 수 있어요. 반드시 '상세'로 발급하세요. 발급 후 3~6개월 이내 서류만 받는 곳이 많으니 너무 일찍 떼지 마세요."],"l":"https://efamily.scourt.go.kr"},{"id":"k02","a":"legal","w":"KR","b":140,"m":45,"xp":40,"c":"regID && hasKR","t":["Apostille dokumen Korea","한국 서류 아포스티유"],"d":["Ajukan apostille di Kementerian Luar Negeri Korea (영사민원24, tersedia e-Apostille). Indonesia anggota Konvensi Apostille sejak 4 Juni 2022, jadi tidak perlu legalisasi kedutaan lagi.","외교부 영사민원24에서 아포스티유를 신청하세요(전자 아포스티유 가능). 인도네시아는 2022년 6월 4일부터 아포스티유 협약국이라 대사관 영사확인은 필요 없어요."],"l":"https://consul.mofa.go.kr"},{"id":"k03","a":"legal","w":"KR","b":125,"m":40,"xp":60,"c":"regID && hasKR","t":["Surat keterangan tidak ada halangan menikah dari Kedutaan Korea","주인도네시아 한국대사관 혼인요건 관련 증명"],"d":["KUA / Dukcapil meminta surat status tidak ada halangan menikah dari kedutaan negara asal (PMA 30/2024). Tanyakan ke bagian konsuler Kedutaan Besar Korea di Jakarta dokumen apa yang mereka terbitkan untuk ini, lalu bawa dokumen dari quest sebelumnya.","KUA·Dukcapil은 본국 대사관이 발급한 혼인에 장애가 없다는 증명을 요구해요(종교부령 30/2024). 주인도네시아 대한민국 대사관 영사과에 어떤 서류를 발급하는지 문의하고, 앞 퀘스트의 증명서를 가져가세요."],"l":"https://overseas.mofa.go.kr/id-ko/index.do"},{"id":"k04","a":"legal","w":"KR","b":110,"m":35,"xp":30,"c":"regID && hasKR","t":["Terjemahkan dokumen Korea ke Bahasa Indonesia","한국 서류 인도네시아어 번역"],"d":["Pakai penerjemah tersumpah (sworn translator) di Indonesia. Terjemahkan juga sertifikat apostille-nya.","인도네시아 공인 번역사(penerjemah tersumpah)에게 맡기세요. 아포스티유 확인서도 함께 번역해요."]},{"id":"k05","a":"legal","w":"notID","b":90,"m":30,"xp":20,"c":"regID && nonID","t":["Fotokopi paspor & visa / izin tinggal yang berlaku","여권·비자(체류허가) 사본 준비"],"d":["Pastikan izin tinggal masih berlaku sampai hari pencatatan.","혼인 등록일까지 체류 허가가 유효한지 확인하세요."]},{"id":"k06","a":"legal","w":"notID","b":60,"m":21,"xp":30,"c":"regID && nonID","t":["Surat keterangan lapor diri dari kepolisian (SKLD/STMD)","경찰서 외국인 체류 신고 확인서(SKLD)"],"d":["Diurus di Polres/Polda setempat dengan paspor dan izin tinggal. Tidak semua KUA/Dukcapil memintanya, jadi tanyakan saat konsultasi.","관할 경찰서에서 여권과 체류허가로 신청해요. 모든 기관이 요구하지는 않으니 사전 문의 때 확인하세요."]},{"id":"o01","a":"legal","w":"OT","b":150,"m":45,"xp":60,"c":"regID && hasOT","t":["Dokumen status sipil & CNI dari negara asal","본국 신분 서류와 혼인요건증명"],"d":["Untuk pasangan berkewarganegaraan lain: akta lahir, bukti belum menikah, dan surat tidak ada halangan menikah dari kedutaannya, lalu apostille atau legalisasi dan terjemahan tersumpah.","제3국 국적 배우자: 출생증명, 미혼 증명, 본국 대사관의 혼인요건증명 → 아포스티유(또는 영사확인) → 공인 번역."]},{"id":"i01","a":"legal","w":"ID","b":200,"m":60,"xp":20,"c":"hasID","t":["Siapkan KTP, KK, akta kelahiran (asli + fotokopi)","KTP·가족카드·출생증명서 준비"],"d":["Cek ejaan nama dan tanggal lahir sama di semua dokumen, termasuk paspor. Beda satu huruf bisa bikin berkas ditolak.","모든 서류(여권 포함)의 이름과 생년월일이 같은지 확인하세요. 한 글자만 달라도 반려될 수 있어요."]},{"id":"i02","a":"legal","w":"ID","b":75,"m":21,"xp":30,"c":"regID && hasID","t":["Surat pengantar RT/RW & formulir kelurahan","RT/RW 추천서와 동사무소 서류"],"d":["Untuk KUA: formulir N1, N2, N4 dari kelurahan (N3 persetujuan mempelai ditandatangani berdua). Untuk Dukcapil: surat keterangan belum menikah dari kelurahan.","KUA용: 동사무소(kelurahan)의 N1·N2·N4 양식(N3 신랑신부 동의서는 둘이 서명). Dukcapil용: 동사무소 미혼 확인서."]},{"id":"i03","a":"legal","w":"both","b":80,"m":25,"xp":30,"c":"regID","t":["Pemeriksaan kesehatan pranikah","혼전 건강검진"],"d":["Di Puskesmas, termasuk imunisasi TT untuk calon pengantin perempuan bila diminta, dan isi aplikasi Elsimil BKKBN. Syaratnya bisa berbeda per daerah.","보건소(Puskesmas)에서 검진하고, 요구 시 신부는 파상풍(TT) 예방접종을 해요. BKKBN 'Elsimil' 앱도 작성해요. 지역마다 다를 수 있어요."]},{"id":"i04","a":"legal","w":"both","b":60,"m":14,"xp":20,"c":"regID","t":["Pas foto berdampingan","커플 증명사진"],"d":["Biasanya latar biru, ukuran 2x3 atau 4x6, beberapa lembar. Cek ukuran yang diminta kantor pencatat.","보통 파란 배경, 2x3 또는 4x6 사이즈 여러 장. 기관에서 요구하는 사이즈를 확인하세요."]},{"id":"i05","a":"legal","w":"both","b":60,"m":14,"xp":20,"c":"regID || regKR","t":["Tentukan 2 saksi nikah","증인 2명 정하기"],"d":["KUA: dua saksi laki-laki Muslim dewasa. Dukcapil: dua saksi dewasa ber-KTP. Korea: dua saksi dewasa menandatangani 혼인신고서.","KUA: 성인 무슬림 남성 2명. Dukcapil: 신분증 있는 성인 2명. 한국: 성인 2명이 혼인신고서에 서명."]},{"id":"u01","a":"legal","w":"both","b":75,"m":20,"xp":40,"c":"kua","t":["Ikuti Bimbingan Perkawinan (Bimwin)","혼인 교육(Bimwin) 이수"],"d":["Wajib bagi calon pengantin (SE Dirjen Bimas Islam No. 02/2024). Bisa tatap muka, mandiri, atau virtual. Sertifikatnya jadi syarat pemeriksaan nikah.","예비부부 필수 과정(이슬람 지도국 회람 02/2024). 대면·자율·온라인 가능하며, 수료증이 혼인 심사에 필요해요."]},{"id":"u02","a":"legal","w":"both","b":60,"m":12,"xp":60,"c":"kua","t":["Daftar nikah di SIMKAH / KUA","SIMKAH·KUA에 혼인 신청"],"d":["Paling lambat 10 hari kerja sebelum akad. Akad di KUA pada jam kerja gratis; di luar KUA dikenai biaya Rp600.000 (PNBP).","늦어도 혼인 10영업일 전까지 신청해요. KUA에서 근무시간에 하면 무료, KUA 밖에서 하면 60만 루피아(PNBP)."],"l":"https://simkah4.kemenag.go.id"},{"id":"u03","a":"legal","w":"bride","b":45,"m":10,"xp":30,"c":"kua","t":["Pastikan wali nikah","왈리(혼인 후견인) 확인"],"d":["Wali nasab adalah ayah atau kerabat laki-laki Muslim dari pihak perempuan. Kalau ayah mempelai perempuan bukan Muslim atau tidak bisa hadir, biasanya memakai wali hakim (Kepala KUA). Urus suratnya sejak awal.","왈리는 신부 측 아버지나 무슬림 남성 친척이에요. 신부 아버지가 무슬림이 아니거나 참석할 수 없으면 보통 KUA 소장이 '왈리 하킴'이 돼요. 관련 서류를 미리 준비하세요."]},{"id":"u04","a":"legal","w":"groom","b":30,"m":7,"xp":20,"c":"kua","t":["Siapkan mahar","마하르(혼인 선물) 준비"],"d":["Sepakati bentuk dan jumlah mahar, lalu sebutkan dengan jelas saat akad.","마하르의 형태와 금액을 합의하고, 혼인 서약 때 정확히 말해요."]},{"id":"u05","a":"legal","w":"both","b":14,"m":7,"xp":30,"c":"kua","t":["Pemeriksaan berkas di KUA (rafak)","KUA 서류 심사"],"d":["Kedua calon dan wali datang untuk pemeriksaan berkas dan wawancara singkat.","신랑신부와 왈리가 함께 KUA에 가서 서류 심사와 간단한 면담을 받아요."]},{"id":"u06","a":"legal","w":"both","b":120,"m":30,"xp":60,"c":"regID && mixedRel && anyIslam","t":["Jika memeluk Islam: syahadat & sertifikat mualaf","이슬람 개종 시: 샤하다와 개종 증명서"],"d":["Diurus di masjid atau lembaga yang menerbitkan sertifikat mualaf. Setelah itu ubah agama di menu Atur supaya jalur KUA terbuka.","개종 증명서를 발급하는 모스크나 기관에서 진행해요. 이후 '설정'에서 종교를 바꾸면 KUA 퀘스트가 열려요."]},{"id":"r01","a":"legal","w":"both","b":180,"m":45,"xp":60,"c":"dukcapil && relP","t":["Daftar pemberkatan di gereja + bimbingan pranikah","교회 혼인예배 신청과 혼전 교육"],"d":["Tiap gereja punya syarat sendiri (surat baptis/sidi, katekisasi atau konseling pranikah). Minta surat pemberkatan untuk dibawa ke Dukcapil.","교회마다 요건이 달라요(세례·입교 증명, 혼전 상담 등). Dukcapil에 제출할 혼인예배 증명서를 받아 두세요."]},{"id":"r02","a":"legal","w":"both","b":180,"m":45,"xp":60,"c":"dukcapil && relK","t":["Kursus Persiapan Perkawinan & penyelidikan kanonik","혼인 강좌와 교회법 면담 (가톨릭)"],"d":["Daftar di paroki. Biasanya ada pengumuman nikah tiga minggu berturut-turut, dan beberapa paroki meminta surat baptis terbaru (6 bulan terakhir).","본당에 신청하세요. 보통 3주 연속 혼인 공시가 있고, 최근 6개월 내 세례증명서를 요구하는 곳도 있어요."]},{"id":"r03","a":"legal","w":"both","b":150,"m":40,"xp":60,"c":"dukcapil && relH","t":["Koordinasi upacara dengan pemangku / PHDI","힌두 의식 준비 (PHDI)"],"d":["Kalau salah satu baru memeluk Hindu, perlu upacara Sudhi Wadani. Minta surat keterangan perkawinan untuk Dukcapil.","한 사람이 새로 힌두교를 받아들인 경우 '수디 와다니' 의식이 필요해요. Dukcapil 제출용 혼인 증명을 받아요."]},{"id":"r04","a":"legal","w":"both","b":150,"m":40,"xp":60,"c":"dukcapil && relB","t":["Pilih vihara & pandita, daftarkan pemberkatan","사찰·법사 선정과 불교 혼례 신청"],"d":["Pemberkatan perkawinan Buddhis dipimpin pandita dari majelis agama Buddha (misalnya MBI, MAGABUDHI, atau majelis lain sesuai vihara). Tanyakan jadwal, biaya, dan syaratnya. Pandita menerbitkan surat keterangan perkawinan agama Buddha yang dibawa ke Dukcapil.","불교 혼례는 불교 단체(예: MBI, MAGABUDHI 등 사찰이 속한 단체)의 법사(판디타)가 주례해요. 일정, 비용, 요건을 문의하세요. 법사가 발급하는 불교 혼인 증명서를 Dukcapil에 제출해요."]},{"id":"r05","a":"legal","w":"both","b":150,"m":40,"xp":60,"c":"dukcapil && relC","t":["Daftar upacara Liep Gwan (Khonghucu)","유교식 혼례(립관) 신청"],"d":["Hubungi MATAKIN atau kelenteng setempat untuk upacara dan surat keterangannya.","MATAKIN 또는 지역 사당에 의식과 증명서를 문의하세요."]},{"id":"r06","a":"legal","w":"both","b":30,"m":10,"xp":60,"c":"dukcapil","t":["Daftarkan pencatatan perkawinan ke Dukcapil","Dukcapil 혼인 등록 신청"],"d":["Bawa surat perkawinan dari lembaga agama, dokumen kedua mempelai, dan dua saksi. Batas pencatatan 60 hari setelah upacara; paling aman di hari yang sama (petugas Dukcapil bisa datang ke lokasi).","종교기관의 혼인 증명서, 두 사람의 서류, 증인 2명이 필요해요. 의식 후 60일 이내 등록해야 하고, 당일 등록이 가장 안전해요(공무원 출장 등록 가능)."]},{"id":"n01","a":"legal","w":"both","b":45,"m":10,"xp":60,"c":"mixedNat && hasID","t":["Buat akta perjanjian perkawinan di notaris","공증인에게 혼전 계약서 작성"],"d":["Lalu catatkan di KUA / Dukcapil bersamaan dengan pencatatan nikah (atau setelahnya). Lewati quest ini kalau memutuskan tidak membuat prenup.","작성 후 혼인 등록 때(또는 이후) KUA·Dukcapil에 함께 등록해요. 하지 않기로 했다면 이 퀘스트는 건너뛰세요."]},{"id":"y01","a":"legal","w":"ID","b":150,"m":45,"xp":40,"c":"regKR && hasID","t":["Dokumen WNI untuk Korea + apostille","인도네시아 서류 준비와 아포스티유"],"d":["Akta kelahiran dan surat keterangan belum menikah (kelurahan / Dukcapil), lalu apostille online di Kementerian Hukum (AHU).","출생증명서와 미혼 증명서(동사무소·Dukcapil)를 준비하고, 법무부(AHU)에서 온라인 아포스티유를 받아요."],"l":"https://apostille.ahu.go.id"},{"id":"y02","a":"legal","w":"ID","b":100,"m":30,"xp":60,"c":"regKR && hasID","t":["Surat keterangan untuk menikah dari KBRI Seoul","주한 인도네시아 대사관 혼인 관련 증명"],"d":["구청 biasanya meminta bukti tidak ada halangan menikah dari negara asal. Tanyakan format dan syaratnya ke KBRI Seoul.","구청은 보통 본국의 혼인요건 증명을 요구해요. 주한 인도네시아 대사관에 양식과 요건을 문의하세요."],"l":"https://kemlu.go.id/seoul"},{"id":"y03","a":"legal","w":"notKR","b":90,"m":25,"xp":30,"c":"regKR && nonKR","t":["Terjemahkan dokumen ke Bahasa Korea","서류 한국어 번역"],"d":["Lampirkan terjemahan dengan nama dan tanda tangan penerjemah. Beberapa 구청 meminta terjemahan yang dinotariskan (번역 공증).","번역문에 번역자 이름과 서명을 넣어요. 일부 구청은 번역 공증을 요구해요."]},{"id":"y04","a":"legal","w":"OT","b":150,"m":45,"xp":60,"c":"regKR && hasOT","t":["Dokumen negara asal untuk 혼인신고","혼인신고용 본국 서류"],"d":["Bukti identitas, akta lahir, dan bukti belum menikah dari negara asal, dengan apostille atau legalisasi dan terjemahan Korea.","본국의 신분·출생·미혼 증명서와 아포스티유(또는 영사확인), 한국어 번역."]},{"id":"y05","a":"legal","w":"both","b":0,"m":0,"xp":120,"c":"regKR","ev":"KR","t":["Ajukan 혼인신고 di 구청 / 시청","구청·시청에 혼인신고"],"d":["Bisa di kantor mana saja, tidak harus sesuai domisili. Formulir 혼인신고서 ditandatangani dua saksi dewasa. Pernikahan sah menurut hukum Korea sejak 혼인신고 diterima.","주소지와 관계없이 어느 구청에서나 가능해요. 혼인신고서에 성인 증인 2명이 서명해요. 한국법상 혼인은 신고가 수리된 때부터 효력이 생겨요."]},{"id":"y06","a":"legal","w":"both","b":60,"m":20,"xp":40,"c":"regKR && hasID && bothIslam","t":["Opsional: akad nikah di KBRI Seoul","선택: 주한 인도네시아 대사관에서 이슬람 혼례"],"d":["Untuk pasangan Muslim, KBRI punya layanan pencatatan nikah sehingga kalian mendapat buku nikah Indonesia. Tanyakan jadwal dan syaratnya ke KBRI Seoul.","무슬림 커플은 대사관의 혼인 등록 서비스로 인도네시아 혼인증서를 받을 수 있어요. 일정과 요건을 대사관에 문의하세요."]},{"id":"b02","a":"legal","w":"both","b":180,"m":45,"xp":40,"c":"regID && relB","t":["Surat keterangan beragama Buddha","불교 신자 확인서 준비"],"d":["Majelis biasanya meminta bukti bahwa kedua mempelai beragama Buddha. Kalau belum punya dokumen keagamaan (misalnya pasangan dari Korea), tanyakan ke vihara apakah cukup surat keterangan dari vihara atau perlu upacara Visudhi Trisarana.","불교 단체는 보통 두 사람이 불교 신자라는 확인서를 요구해요. 종교 관련 서류가 없다면(예: 한국인 배우자) 사찰 확인서로 충분한지, 삼귀의 수계식(Visudhi Trisarana)이 필요한지 문의하세요."]},{"id":"b03","a":"legal","w":"both","b":120,"m":30,"xp":40,"c":"dukcapil && relB","t":["Bimbingan pranikah di vihara","사찰 혼전 교육"],"d":["Beberapa vihara atau majelis mewajibkan kelas pranikah sebelum pemberkatan. Ikuti dan simpan sertifikatnya.","일부 사찰이나 단체는 혼례 전 교육을 의무로 해요. 수료 후 확인서를 보관하세요."]},{"id":"b06","a":"legal","w":"both","b":120,"m":30,"xp":60,"c":"regID && mixedRel && anyBuddha","t":["Jika memeluk agama Buddha: upacara Visudhi Trisarana","불교 귀의 시: 삼귀의 수계식"],"d":["Upacara menyatakan berlindung kepada Tiratana, dilakukan di vihara dan diberi surat keterangan. Setelah itu ubah agama di menu Atur supaya jalur pemberkatan Buddhis terbuka.","사찰에서 삼보에 귀의하는 의식을 하고 확인서를 받아요. 이후 '설정'에서 종교를 바꾸면 불교 혼례 퀘스트가 열려요."]},{"id":"v01","a":"vendor","w":"both","b":180,"m":45,"xp":40,"c":"travelFam","t":["Pesan tiket & akomodasi keluarga dari luar negeri","해외에서 오는 가족 항공권·숙소 예약"],"d":["Pesan lebih awal kalau tanggalnya dekat musim liburan (Lebaran, 추석, akhir tahun).","명절(르바란, 추석, 연말)과 겹치면 더 일찍 예약하세요."]},{"id":"v02","a":"vendor","w":"ID","b":120,"m":45,"xp":40,"c":"idFamToKR","t":["Bantu keluarga WNI mengurus visa Korea","인도네시아 가족의 한국 비자 지원"],"d":["WNI perlu visa untuk masuk Korea. Siapkan surat undangan pernikahan dan jadwal acara, lalu ajukan lewat Korea Visa Application Center di Jakarta.","인도네시아인은 한국 입국 비자가 필요해요. 청첩장과 일정을 준비해 자카르타 비자신청센터(KVAC)에 신청하세요."]},{"id":"v03","a":"vendor","w":"KR","b":45,"m":10,"xp":20,"c":"krFamToID","t":["Info visa Indonesia untuk keluarga Korea","한국 가족의 인도네시아 비자 안내"],"d":["Warga Korea bisa mengajukan e-VOA sebelum berangkat. Paspor minimal berlaku 6 bulan.","한국인은 출국 전 온라인 도착비자(e-VOA)를 신청할 수 있어요. 여권 유효기간 6개월 이상 필요."],"l":"https://evisa.imigrasi.go.id"},{"id":"v04","a":"vendor","w":"both","b":120,"m":30,"xp":30,"c":"bilingual","t":["Siapkan penerjemah / MC dua bahasa","통역 또는 2개 국어 사회자 섭외"],"d":["Supaya keluarga dua negara sama-sama paham jalannya acara.","양가 가족 모두 예식 진행을 이해할 수 있도록."]},{"id":"w01","a":"vendor","w":"both","b":300,"m":60,"xp":80,"c":"cerID","ev":"ID","t":["Booking venue di Indonesia","인도네시아 예식장 예약"],"d":["Gedung atau hotel favorit sering penuh 9 sampai 12 bulan sebelumnya, terutama di bulan-bulan musim nikah. Cek kapasitas, parkir, dan apakah catering wajib dari venue.","인기 장소는 9~12개월 전에 마감돼요. 수용 인원, 주차, 지정 케이터링 여부를 확인하세요."]},{"id":"w02","a":"vendor","w":"both","b":300,"m":60,"xp":80,"c":"cerKR","ev":"KR","t":["Booking 웨딩홀 di Korea","한국 웨딩홀 예약"],"d":["웨딩홀 populer biasanya penuh 6 sampai 12 bulan sebelumnya. Biasanya sudah termasuk buffet; cek 보증인원 (jumlah tamu minimum yang dibayar).","인기 웨딩홀은 6~12개월 전에 마감돼요. 뷔페 포함 여부와 보증인원을 꼭 확인하세요."]},{"id":"w03","a":"vendor","w":"both","b":290,"m":60,"xp":40,"t":["Pilih wedding organizer / 웨딩플래너","웨딩플래너 정하기"],"d":["WO yang berpengalaman dengan pernikahan campuran akan sangat membantu urusan dua budaya.","국제결혼 경험이 있는 플래너라면 두 문화 진행에 큰 도움이 돼요."]},{"id":"w04","a":"vendor","w":"both","b":270,"m":45,"xp":40,"c":"cerID","ev":"ID","t":["Booking catering","케이터링 예약"],"d":["Jadwalkan food tasting. Kalau ada tamu Muslim, pastikan catering halal; siapkan juga menu yang aman untuk tamu Korea yang tidak tahan pedas.","시식 일정을 잡으세요. 무슬림 하객이 있다면 할랄 확인, 매운 음식을 못 먹는 한국 하객용 메뉴도 준비해요."]},{"id":"w05","a":"vendor","w":"both","b":270,"m":45,"xp":40,"t":["Booking fotografer & videografer","사진·영상 작가 예약"],"d":["Cek portofolio dan apa saja yang termasuk paket (album, file mentah, durasi liputan).","포트폴리오와 포함 내역(앨범, 원본, 촬영 시간)을 확인하세요."]},{"id":"w06","a":"vendor","w":"both","b":270,"m":60,"xp":60,"c":"cerKR","ev":"KR","t":["Paket 스드메 (studio · dress · makeup)","스드메 패키지 계약"],"d":["Standar pernikahan Korea: foto studio, sewa gaun, dan makeup dalam satu paket. Bandingkan beberapa paket dan cek biaya tambahan.","한국 결혼 준비의 기본인 스튜디오·드레스·메이크업 패키지. 여러 곳을 비교하고 추가 비용을 꼭 확인하세요."]},{"id":"w07","a":"vendor","w":"both","b":240,"m":45,"xp":40,"c":"cerID","ev":"ID","t":["Booking MUA & busana","메이크업과 의상 예약 (인도네시아)"],"d":["Kebaya, beskap, busana adat, atau gaun. Tanyakan berapa kali fitting yang termasuk paket.","끄바야, 전통 의상 또는 드레스. 피팅 횟수가 몇 번 포함되는지 물어보세요."]},{"id":"w08","a":"vendor","w":"both","b":210,"m":30,"xp":30,"t":["Booking dekorasi & bunga","장식과 꽃 예약"],"d":["Sesuaikan dengan konsep dan aturan venue (beberapa venue punya vendor rekanan wajib).","콘셉트와 장소 규정에 맞추세요(지정 업체만 허용하는 곳도 있어요)."]},{"id":"w09","a":"vendor","w":"both","b":200,"m":30,"xp":30,"t":["Booking MC & hiburan","사회자와 공연 섭외"],"d":["Musik, band, atau penyanyi. Di Korea teman sering mengisi 축가 (lagu ucapan selamat).","음악, 밴드, 가수. 한국에서는 친구가 축가를 부르는 경우가 많아요."]},{"id":"w10","a":"vendor","w":"both","b":180,"m":30,"xp":40,"t":["Pesan cincin kawin","결혼반지 주문"],"d":["Ukur jari, pilih model, dan ukiran nama. Pembuatan bisa makan 4 sampai 8 minggu.","손가락 사이즈를 재고 디자인과 각인을 정하세요. 제작에 4~8주 걸릴 수 있어요."]},{"id":"w11","a":"vendor","w":"both","b":150,"m":30,"xp":30,"c":"adatKR","t":["Sewa hanbok untuk 폐백 & keluarga","폐백·가족용 한복 대여"],"d":["Untuk pengantin dan, kalau mau, orang tua kedua pihak.","신랑신부, 원하면 양가 부모님 한복까지."]},{"id":"w12","a":"vendor","w":"both","b":150,"m":45,"xp":30,"t":["Desain undangan (cetak & digital, dua bahasa)","청첩장 디자인 (종이·모바일, 2개 국어)"],"d":["Di Korea undangan digital (모바일 청첩장) sangat umum. Cantumkan info rekening untuk tamu yang ingin memberi amplop dari jauh kalau perlu.","한국은 모바일 청첩장이 일반적이에요. 필요하면 마음 전하실 곳(계좌) 안내도 넣어요."]},{"id":"w13","a":"vendor","w":"both","b":150,"m":30,"xp":20,"t":["Pesan souvenir","답례품 주문"],"d":["Sesuaikan jumlahnya dengan perkiraan tamu ditambah cadangan 10%.","예상 하객 수에 10% 여유분을 더해 주문하세요."]},{"id":"b07","a":"vendor","w":"both","b":150,"m":40,"xp":40,"c":"cerKR && relB","ev":"KR","t":["Opsional: 화혼식 (pernikahan Buddhis) di 사찰 Korea","선택: 한국 사찰에서 화혼식"],"d":["Banyak 사찰 di Korea melayani upacara pernikahan Buddhis (화혼식). Tanyakan jadwal dan biayanya kalau ingin upacara Buddhis di Korea juga.","한국의 많은 사찰에서 불교식 결혼식(화혼식)을 진행해요. 한국에서도 불교식으로 하고 싶다면 일정과 비용을 문의하세요."]},{"id":"d07","a":"adat","w":"both","b":90,"m":20,"xp":30,"c":"adatKR","t":["Persiapan 폐백","폐백 준비"],"d":["Upacara keluarga Korea: memberi hormat ke orang tua, lalu orang tua melempar kurma dan kastanye (대추·밤) untuk ditangkap pengantin. Biasanya disediakan 웨딩홀; kalau di Indonesia, siapkan meja dan perlengkapannya.","부모님께 절을 올리고 대추·밤을 받는 한국 전통 의식이에요. 웨딩홀에서 준비해 주는 경우가 많고, 인도네시아에서 한다면 상차림을 따로 준비해요."]},{"id":"c01","a":"adat","w":"both","b":360,"m":120,"xp":40,"c":"adatCN || adatKR","t":["Pilih tanggal baik (hari baik / 택일)","길일 택일하기"],"d":["Dalam tradisi Tionghoa, tanggal baik biasanya dicek ke suhu atau almanak (Tong Shu) berdasarkan shio dan tanggal lahir kedua mempelai. Tradisi Korea juga mengenal 택일. Tetapkan tanggal ini sebelum booking venue.","중국계 전통에서는 두 사람의 띠와 생년월일로 사부(스승)나 통서(역서)를 보고 길일을 정해요. 한국에도 택일 풍습이 있어요. 예식장 예약 전에 날짜를 정하세요."]},{"id":"c02","a":"adat","w":"both","b":150,"m":30,"xp":30,"c":"adatCN","t":["Pesan busana Tionghoa (qipao / kua)","중국 전통 의상(치파오·꽈) 준비"],"d":["Merah atau merah-emas melambangkan kebahagiaan. Tentukan busana untuk sangjit dan tea pai, juga untuk orang tua kalau mau seragam.","빨간색이나 금색은 행복을 상징해요. 상짓과 차 예식(티파이)에 입을 옷을 정하고, 원하면 부모님 의상도 맞춰요."]},{"id":"c03","a":"adat","w":"groom","b":120,"m":30,"xp":30,"c":"adatCN","t":["Siapkan seserahan sangjit","상짓 예물 준비"],"d":["Nampan seserahan berjumlah genap (umumnya 6, 8, 10, atau 12), misalnya angpao, perhiasan, kue, buah, arak atau teh, dan kain. Hindari angka 4. Sesuaikan dengan kebiasaan keluarga.","예물 쟁반은 짝수(보통 6·8·10·12개)로 준비해요. 홍바오, 장신구, 과자, 과일, 술이나 차, 옷감 등. 숫자 4는 피하고 집안 풍습에 맞추세요."]},{"id":"c04","a":"adat","w":"both","b":75,"m":21,"xp":60,"c":"adatCN","t":["Acara sangjit","상짓(예물 전달식)"],"d":["Keluarga pria mengantar seserahan ke rumah keluarga wanita, lalu keluarga wanita mengembalikan sebagian isi nampan sebagai balasan. Biasanya 1 sampai 3 bulan sebelum pernikahan.","신랑 가족이 신부 집에 예물을 전달하고, 신부 가족은 답례로 일부를 돌려보내요. 보통 결혼 1~3개월 전에 해요."]},{"id":"c05","a":"adat","w":"both","b":60,"m":14,"xp":30,"c":"adatCN","t":["Dekorasi & perlengkapan Tionghoa","중국 전통 장식·소품"],"d":["Hiasan 囍 (shuang xi), lampion, angpao, perlengkapan kamar pengantin, dan set teh untuk tea pai.","囍(쌍희) 장식, 등, 홍바오 봉투, 신방 소품, 차 예식용 다기 세트를 준비해요."]},{"id":"c06","a":"adat","w":"both","b":30,"m":7,"xp":30,"c":"adatCN","t":["Susun urutan keluarga untuk tea pai","차 예식(티파이) 순서표 작성"],"d":["Pengantin menyuguhkan teh kepada orang tua dan kerabat yang lebih tua sesuai urutan senioritas, lalu menerima angpao atau perhiasan. Susun urutannya bersama orang tua. Bisa digabung dengan 폐백 dalam satu sesi keluarga.","신랑신부가 부모님과 어른들께 서열 순서대로 차를 올리고 홍바오나 장신구를 받아요. 부모님과 순서를 정하세요. 폐백과 한 자리에서 함께 해도 좋아요."]},{"id":"c07","a":"adat","w":"bride","b":1,"m":1,"xp":40,"c":"adatCN","t":["Upacara sisir rambut (Shang Tou / Cio Tao)","머리 빗기 의식(상터우)"],"d":["Malam atau pagi sebelum pernikahan, orang tua atau kerabat yang dianggap beruntung menyisir rambut pengantin sebagai simbol kedewasaan. Ikuti tradisi keluarga; tidak semua keluarga melakukannya.","결혼 전날 밤이나 당일 아침, 부모님이나 복 많은 어른이 신부(신랑)의 머리를 빗어 주며 성년을 축복해요. 집안 전통에 따라 생략하기도 해요."]},{"id":"c08","a":"adat","w":"both","b":3,"m":1,"xp":20,"c":"adatCN","t":["Sembahyang leluhur (opsional)","조상께 고하기 (선택)"],"d":["Sebagian keluarga memberi tahu leluhur di meja abu sebelum pernikahan. Tanyakan kebiasaan keluarga.","일부 가정은 결혼 전 위패 앞에서 조상께 결혼을 알려요. 집안 풍습을 여쭤보세요."]},{"id":"ka1","a":"adat","w":"groom","b":60,"m":14,"xp":30,"c":"adatKR","t":["Tradisi 함 (opsional)","함 보내기 (선택)"],"d":["Kotak 함 berisi hadiah dan surat pernikahan (혼서지) dari pihak pria untuk keluarga wanita, dulu diantar teman-teman pria. Sekarang banyak keluarga menyederhanakan atau melewatkannya.","신랑 측이 혼서지와 예물을 담은 함을 신부 집에 보내는 풍습이에요. 요즘은 간소화하거나 생략하는 집도 많아요."]},{"id":"d01","a":"detail","w":"both","b":150,"m":30,"xp":40,"t":["Sesi foto prewedding","웨딩 촬영"],"d":["Kalau ambil paket 스드메, foto studio biasanya sudah termasuk.","스드메 패키지라면 스튜디오 촬영이 보통 포함돼요."]},{"id":"d02","a":"detail","w":"both","b":120,"m":30,"xp":40,"t":["Booking bulan madu","신혼여행 예약"],"d":["Cek kebutuhan visa tujuan untuk paspor masing-masing.","각자의 여권 기준으로 목적지 비자가 필요한지 확인하세요."]},{"id":"d03","a":"detail","w":"both","b":120,"m":20,"xp":20,"t":["Fitting busana pertama","첫 의상 피팅"],"d":["Bawa sepatu dan aksesori yang akan dipakai.","실제 신을 신발과 액세서리를 가져가세요."]},{"id":"d04","a":"detail","w":"both","b":100,"m":20,"xp":30,"t":["Draft rundown acara","식순 초안 작성"],"d":["Indonesia: akad atau pemberkatan, lalu resepsi. Korea: 예식 sekitar 30 menit, 폐백, lalu makan. Tandai bagian yang perlu diterjemahkan.","인도네시아: 혼례(아카드·축복식) 후 피로연. 한국: 약 30분 예식, 폐백, 식사. 통역이 필요한 순서를 표시하세요."]},{"id":"d05","a":"detail","w":"both","b":100,"m":40,"xp":40,"t":["Finalisasi daftar tamu & alamat","하객 명단과 주소 확정"],"d":["Lengkapi di tab Tamu: pihak, jumlah orang, dan acara yang dihadiri.","'하객' 탭에 소속, 인원, 참석 행사를 채워요."]},{"id":"d06","a":"detail","w":"both","b":90,"m":20,"xp":30,"t":["Siapkan seserahan / 예단·예물","예단·예물(스스라한) 준비"],"d":["Seserahan dari pihak pria (Indonesia) dan tradisi tukar hadiah keluarga 예단·예물 (Korea). Sepakati dulu mana yang dipakai.","인도네시아의 신랑 측 예물(스스라한)과 한국의 예단·예물. 어떤 전통을 따를지 먼저 합의하세요."]},{"id":"d08","a":"detail","w":"bride","b":75,"m":14,"xp":20,"t":["Tes makeup & rambut","메이크업·헤어 리허설"],"d":["Foto hasilnya di cahaya siang dan lampu ruangan.","자연광과 실내 조명에서 각각 사진을 찍어 확인하세요."]},{"id":"d09","a":"detail","w":"both","b":60,"m":21,"xp":40,"t":["Sebar undangan","청첩장 발송"],"d":["Indonesia: 1 sampai 2 bulan sebelum. Korea: 모바일 청첩장 sekitar 1 bulan sebelum. Tandai di tab Tamu siapa saja yang sudah dikirimi.","인도네시아: 1~2개월 전. 한국: 모바일 청첩장 약 1개월 전. '하객' 탭에 발송 여부를 체크하세요."]},{"id":"d10","a":"detail","w":"both","b":60,"m":14,"xp":20,"t":["Cek kontrak & jadwal bayar semua vendor","모든 업체 계약서와 잔금 일정 확인"],"d":["Catat tanggal pelunasan di tab Vendor supaya tidak ada yang kelewat.","'업체' 탭에 잔금 날짜를 적어 두세요."]},{"id":"f01","a":"final","w":"both","b":21,"m":10,"xp":40,"t":["Konfirmasi RSVP & jumlah final ke venue / catering","참석 확인 후 최종 인원 전달"],"d":["Hitung dari tab Tamu, tambahkan cadangan sesuai saran venue.","'하객' 탭에서 집계하고 장소 권장만큼 여유분을 더해요."]},{"id":"f02","a":"final","w":"both","b":21,"m":7,"xp":20,"t":["Fitting terakhir","최종 피팅"],"d":["Bawa semua aksesori; cek panjang gaun dengan sepatu.","액세서리를 모두 챙기고 신발을 신은 채 기장을 확인해요."]},{"id":"f03","a":"final","w":"both","b":14,"m":7,"xp":40,"t":["Pelunasan vendor","업체 잔금 지급"],"d":["Sesuai kontrak. Simpan semua bukti transfer.","계약대로 지급하고 이체 내역을 보관하세요."]},{"id":"f04","a":"final","w":"both","b":14,"m":5,"xp":20,"t":["Siapkan kotak angpao / 축의금 & buku tamu","축의금함·방명록 준비"],"d":["Tunjuk orang terpercaya untuk menjaga. Pertimbangkan QR untuk amplop digital.","믿을 만한 사람에게 관리를 맡기세요. 모바일 송금용 QR도 고려해요."]},{"id":"f05","a":"final","w":"both","b":10,"m":3,"xp":30,"t":["Technical meeting & gladi resik","업체 미팅과 리허설"],"d":["Semua vendor, WO, MC, dan penerjemah menyamakan rundown.","모든 업체·플래너·사회자·통역이 식순을 맞춰요."]},{"id":"f06","a":"final","w":"both","b":7,"m":2,"xp":30,"t":["Satukan semua dokumen asli dalam satu map","원본 서류를 한 파일에 정리"],"d":["Bawa map ini saat akad, pemberkatan, atau pencatatan. Simpan juga scan di ponsel.","혼례·등록 때 이 파일을 가져가요. 휴대폰에 스캔본도 저장해 두세요."]},{"id":"f07","a":"final","w":"both","b":7,"m":1,"xp":30,"t":["Istirahat & self-care","휴식과 셀프 케어"],"d":["Tidur cukup, minum air, jangan ambil kerjaan baru. Ini quest wajib!","충분히 자고, 물 많이 마시고, 새 일은 잡지 마세요. 필수 퀘스트예요!"]},{"id":"f08","a":"final","w":"both","b":5,"m":2,"xp":20,"t":["Siapkan tas darurat Hari H","D-Day 비상 가방"],"d":["Peniti, plester, obat, charger, tisu, permen, sepatu cadangan.","옷핀, 밴드, 상비약, 충전기, 휴지, 사탕, 여분 신발."]},{"id":"f09","a":"final","w":"both","b":3,"m":1,"xp":20,"t":["Bagikan rundown ke keluarga & panitia","가족과 도우미에게 식순 공유"],"d":["Kirim versi dua bahasa ke grup keluarga.","가족 단톡방에 2개 국어 식순을 보내요."]},{"id":"b04","a":"final","w":"both","b":14,"m":5,"xp":30,"c":"relB && (dukcapil || cerKR)","t":["Siapkan perlengkapan upacara pemberkatan","불교 혼례 준비물 챙기기"],"d":["Umumnya altar Buddha, lilin, dupa, bunga, buah, dan air untuk pemberkatan. Minta daftar pastinya ke pandita atau vihara.","보통 불단, 초, 향, 꽃, 과일, 축복수(물)가 필요해요. 정확한 목록은 법사나 사찰에 확인하세요."]},{"id":"b05","a":"final","w":"both","b":21,"m":7,"xp":30,"c":"dukcapil && relB","t":["Gladi susunan upacara pemberkatan","불교 혼례 순서 리허설"],"d":["Biasanya ada pembacaan paritta, ikrar perkawinan, pemasangan cincin, dan pemercikan air pemberkatan. Urutannya mengikuti tradisi majelis. Siapkan penerjemah atau teks dua bahasa untuk keluarga Korea.","보통 경전(파릿타) 독송, 혼인 서약, 반지 교환, 축복수 뿌리기가 있어요. 순서는 단체 전통을 따르고, 한국 가족을 위한 통역이나 2개 국어 순서지를 준비하세요."]},{"id":"h01","a":"boss","w":"both","b":0,"m":0,"xp":300,"c":"kua","ev":"ID","t":["Akad nikah & terima buku nikah","아카드(혼인 서약)와 혼인증서 수령"],"d":["Boss battle! Pastikan wali, saksi, mahar, dan map dokumen siap.","보스전! 왈리, 증인, 마하르, 서류 파일을 확인하세요."]},{"id":"h02","a":"boss","w":"both","b":0,"m":0,"xp":300,"c":"dukcapil","ev":"ID","t":["Upacara agama & pencatatan Dukcapil","종교 혼례와 Dukcapil 혼인 등록"],"d":["Boss battle! Setelah upacara, terima akta perkawinan dari Dukcapil.","보스전! 의식 후 Dukcapil에서 혼인증서를 받아요."]},{"id":"h03","a":"boss","w":"both","b":0,"m":0,"xp":200,"c":"cerID && !kua && !dukcapil","ev":"ID","t":["Acara pernikahan di Indonesia","인도네시아 결혼식"],"d":["Upacara atau resepsi di Indonesia. Kalau pencatatan resminya di Indonesia, pastikan jalur agama di area Desa Rencana sudah diputuskan.","인도네시아에서 여는 예식·피로연. 인도네시아에서 혼인 등록을 한다면 '계획 마을'에서 종교 관련 진행 방법을 먼저 정하세요."]},{"id":"h04","a":"boss","w":"both","b":0,"m":0,"xp":200,"c":"cerKR","ev":"KR","t":["예식 di Korea","한국 예식"],"d":["Biasanya sekitar 30 menit, lalu 폐백 dan makan bersama tamu.","약 30분 예식 후 폐백과 식사가 이어져요."]},{"id":"h05","a":"boss","w":"both","b":0,"m":0,"xp":100,"t":["Senyum, makan, dan nikmati harinya","웃고, 먹고, 오늘을 즐기기"],"d":["Semua yang sudah disiapkan berbulan-bulan, sekarang dinikmati.","몇 달 동안 준비한 모든 걸 이제 즐기세요."]},{"id":"h06","a":"boss","w":"groom","b":0,"m":0,"xp":80,"c":"adatCN","t":["Penjemputan pengantin & door games","신부 맞이(문 게임)"],"d":["Pagi Hari H, pengantin pria menjemput pengantin wanita di rumahnya. Teman-teman pengantin wanita biasanya memberi tantangan sebelum pintu dibuka. Siapkan angpao kecil!","D-Day 아침, 신랑이 신부 집으로 신부를 맞으러 가요. 신부 친구들이 문을 열어 주기 전에 게임을 내요. 작은 홍바오를 준비하세요!"]},{"id":"h07","a":"boss","w":"both","b":0,"m":0,"xp":80,"c":"adatCN","t":["Tea pai bersama keluarga","가족과 차 예식(티파이)"],"d":["Ikuti urutan yang sudah disusun. Siapkan petugas yang menuang teh dan mencatat angpao.","정해 둔 순서대로 진행해요. 차를 따르고 홍바오를 기록할 도우미를 정하세요."]},{"id":"h08","a":"boss","w":"both","b":0,"m":0,"xp":80,"c":"adatKR","t":["폐백 bersama keluarga","가족과 폐백"],"d":["Memberi hormat kepada orang tua, lalu menangkap kurma dan kastanye (대추·밤) dengan rok hanbok.","부모님께 절을 올리고, 던져 주시는 대추와 밤을 치마폭으로 받아요."]},{"id":"a01","a":"after","w":"both","b":-30,"m":0,"xp":40,"c":"reportKR","t":["Apostille buku/akta nikah Indonesia + terjemahan Korea","인도네시아 혼인증서 아포스티유와 한국어 번역"],"d":["Apostille online di Kementerian Hukum (AHU), lalu terjemahkan ke Bahasa Korea untuk laporan ke Korea.","법무부(AHU)에서 온라인 아포스티유를 받고, 한국 신고용으로 한국어 번역을 준비해요."],"l":"https://apostille.ahu.go.id"},{"id":"a02","a":"after","w":"KR","b":-60,"m":0,"xp":80,"c":"reportKR","t":["Laporkan pernikahan ke Korea (혼인신고)","한국에 혼인신고 (해외 혼인)"],"d":["Warga Korea yang menikah di luar negeri perlu melapor (umumnya dalam 3 bulan) lewat Kedutaan Korea di Jakarta atau langsung ke 구청 di Korea. Bawa akta/buku nikah + apostille + terjemahan Korea dan paspor pasangan.","외국에서 혼인한 한국인은 (보통 3개월 이내) 주인도네시아 대사관 또는 한국 구청에 혼인신고를 해요. 혼인증서+아포스티유+번역문, 배우자 여권을 준비하세요."]},{"id":"a03","a":"after","w":"ID","b":-30,"m":0,"xp":40,"c":"regKR && hasID","t":["Lapor pernikahan ke KBRI Seoul","주한 인도네시아 대사관에 혼인 보고"],"d":["Bawa bukti pernikahan Korea (혼인관계증명서) dan paspor. Simpan surat keterangan dari KBRI untuk Dukcapil.","혼인관계증명서와 여권을 가져가요. 대사관 확인서는 Dukcapil 등록에 필요하니 보관하세요."]},{"id":"a04","a":"after","w":"ID","b":-120,"m":0,"xp":60,"c":"regKR && hasID","t":["Catatkan di Dukcapil setelah kembali ke Indonesia","인도네시아 귀국 후 Dukcapil 등록"],"d":["Paling lambat 30 hari setelah kembali ke Indonesia (UU Adminduk). Bawa 혼인관계증명서 + apostille + terjemahan Indonesia dan surat lapor dari KBRI. Ubah deadline quest ini sesuai tanggal kepulangan.","귀국 후 30일 이내(주민행정법). 혼인관계증명서+아포스티유+인니어 번역, 대사관 확인서를 가져가요. 귀국 날짜에 맞춰 이 퀘스트의 마감일을 바꾸세요."]},{"id":"a05","a":"after","w":"ID","b":-30,"m":0,"xp":30,"c":"hasID","t":["Update KK & KTP (status kawin)","가족카드·KTP 혼인 상태 변경"],"d":["Di Dukcapil setelah akta perkawinan atau buku nikah terbit.","혼인증서가 나오면 Dukcapil에서 변경해요."]},{"id":"a06","a":"after","w":"notID","b":-60,"m":0,"xp":80,"c":"needKITAS","t":["Urus izin tinggal (KITAS) penyatuan keluarga","인도네시아 배우자 체류허가(KITAS)"],"d":["Disponsori pasangan WNI lewat Imigrasi. Siapkan buku/akta nikah, KTP & KK pasangan, dan paspor.","인도네시아 배우자가 보증인이 되어 이민국에 신청해요. 혼인증서, 배우자 KTP·가족카드, 여권이 필요해요."],"l":"https://evisa.imigrasi.go.id"},{"id":"a07","a":"after","w":"notKR","b":-90,"m":0,"xp":80,"c":"needF6","t":["Ajukan visa F-6 (결혼이민)","결혼이민(F-6) 비자 신청"],"d":["Syarat utamanya: pernikahan sah dan tercatat di kedua negara, pendapatan sponsor Korea memenuhi standar tahun berjalan, bukti bisa berkomunikasi, dan tempat tinggal. Program 국제결혼 안내 tidak wajib untuk pasangan Indonesia menurut daftar 2024, tapi cek ulang di HiKorea.","두 나라 모두에 혼인이 등록되어 있어야 하고, 초청인의 소득 기준, 의사소통 능력, 주거 요건을 갖춰야 해요. 2024년 기준 인도네시아는 국제결혼 안내프로그램 의무 대상국이 아니지만 하이코리아에서 다시 확인하세요."],"l":"https://www.hikorea.go.kr"},{"id":"a08","a":"after","w":"notKR","b":-150,"m":0,"xp":40,"c":"needF6","t":["Daftar 외국인등록 (kartu ARC)","외국인등록(등록증 발급)"],"d":["Dalam 90 hari setelah masuk Korea dengan visa F-6, di kantor imigrasi sesuai domisili.","F-6로 입국 후 90일 이내 관할 출입국·외국인관서에서 해요."]},{"id":"a09","a":"after","w":"both","b":-14,"m":0,"xp":20,"t":["Kirim ucapan terima kasih & review vendor","감사 인사와 업체 후기"],"d":["Di Korea biasa mengirim pesan terima kasih ke tamu yang memberi 축의금.","한국에서는 축의금을 보내 준 분들께 감사 메시지를 보내요."]},{"id":"a10","a":"after","w":"both","b":-45,"m":0,"xp":20,"t":["Arsipkan dokumen nikah & file foto","혼인 서류와 사진 보관"],"d":["Scan semua dokumen nikah dan simpan di dua tempat. Ambil file foto dan video dari vendor.","혼인 서류를 스캔해 두 곳에 보관하고, 업체에서 사진·영상 원본을 받아요."]},{"id":"ka2","a":"after","w":"bride","b":-7,"m":0,"xp":20,"c":"adatKR","t":["이바지 음식 (opsional)","이바지 음식 (선택)"],"d":["Makanan kiriman keluarga wanita untuk keluarga pria setelah pernikahan. Tanyakan apakah keluarga Korea masih menjalankannya.","결혼 후 신부 집에서 신랑 집으로 음식을 보내는 풍습이에요. 집안에서 하는지 여쭤보세요."]}]};
+
+/* ---------- i18n ---------- */
+const TX = {
+  id: {
+    tab_quest: "Quest", tab_gold: "Gold", tab_guests: "Tamu", tab_vendors: "Vendor", tab_setup: "Atur",
+    st_todo: "Belum mulai", st_progress: "On progress", st_pending: "Pending", st_review: "Review", st_done: "Done",
+    next: "Quest berikutnya", noNext: "Semua quest beres. Kalian luar biasa!", map: "Peta petualangan", list: "Daftar quest",
+    f_prio: "Prioritas", f_late: "Telat", f_30: "30 hari", f_done: "Selesai", f_all: "Semua",
+    late: "Telat", tight: "Mepet", both: "Berdua", back: "Kembali", addQuest: "Tambah quest", badges: "Lencana",
+    stage: "Area", lv: "Lv", due: "Deadline", dueAuto: "otomatis", dueReset: "Pakai deadline otomatis", status: "Status", notes: "Catatan",
+    notesPh: "Nama petugas, nomor antrian, biaya, link…", openLink: "Buka situs resmi", close: "Tutup", save: "Simpan", del: "Hapus", cancel: "Batal",
+    confirmDel: "Yakin hapus? Tekan lagi untuk konfirmasi.", title: "Judul", area: "Area", emptyArea: "Belum ada quest di area ini untuk pilihan kalian.",
+    setupTitle: "Mulai petualangan!", setupBody: "Isi nama, tanggal, negara, dan agama kalian di menu Atur. Quest dan deadline langsung menyesuaikan.", setupGo: "Ke menu Atur",
+    sync_shared: "Tersinkron: semua perubahan langsung terlihat di perangkat pasangan.", sync_local: "Mode lokal: data hanya tersimpan di perangkat ini.",
+    sync_off: "Tidak bisa terhubung ke server. Perubahan akan dicoba lagi otomatis.", pinTitle: "Masukkan PIN", pinBody: "Wedding Quest ini dikunci dengan PIN. Minta PIN-nya ke pemilik.", pinWrong: "PIN salah. Coba lagi.", pinGo: "Masuk",
+    sync_ro: "Mode lihat saja: minta pemilik mengundang kamu sebagai Editor supaya bisa mengubah data.", sync_wait: "Menyambungkan ke penyimpanan bersama…", sync_slow: "Penyimpanan bersama belum tersambung. Data yang tampil mungkin belum terbaru.",
+    saveFail: "Gagal menyimpan. Coba lagi sebentar.",
+    xpGain: "XP", lvUp: "Naik level!",
+    gold_title: "Kantong Gold", budget: "Budget total", planned: "Rencana", actual: "Terpakai", paid: "Sudah dibayar", left: "Sisa budget",
+    addItem: "Tambah pengeluaran", item: "Nama pengeluaran", category: "Kategori", amtPlan: "Rencana biaya", amtActual: "Biaya aktual", amtPaid: "Sudah dibayar", currency: "Mata uang",
+    showIn: "Tampilkan dalam", rate: "Kurs: 1 KRW =", rateUnit: "IDR", byCat: "Per kategori", noItems: "Belum ada pengeluaran. Tambahkan yang pertama, misalnya DP venue.",
+    guests_title: "Daftar Tamu", addGuest: "Tambah tamu", name: "Nama", side: "Pihak", group: "Kelompok", country: "Negara", pax: "Jumlah orang", events: "Hadir di acara",
+    invited: "Undangan terkirim", rsvp: "Konfirmasi", phone: "Kontak", note: "Catatan", search: "Cari nama…",
+    rs_wait: "Belum jawab", rs_yes: "Hadir", rs_no: "Tidak hadir", invPax: "Total diundang (orang)", yesPax: "Hadir (orang)", waitPax: "Belum jawab", noPax: "Tidak hadir",
+    noGuests: "Belum ada tamu. Mulai dari keluarga inti dulu.",
+    vendors_title: "Daftar Vendor", addVendor: "Tambah vendor", vname: "Nama vendor", contact: "Narahubung", email: "Email / Instagram", price: "Harga", payDue: "Jatuh tempo pembayaran",
+    vstatus: "Status", rating: "Rating", copy: "Salin", copied: "Disalin", noVendors: "Belum ada vendor. Simpan kontak vendor yang lagi kalian lirik di sini.",
+    setup_title: "Atur Petualangan", bride: "Pengantin wanita", groom: "Pengantin pria", nat: "Kewarganegaraan", rel: "Agama", loc: "Menikah di", regFirst: "Pencatatan resmi pertama di",
+    date2: "Tanggal acara di negara kedua", start: "Mulai persiapan", wedding: "Tanggal pernikahan (Hari H)", quick: "Atau pilih durasi dari tanggal mulai",
+    months: "bulan", adat: "Adat yang dipakai", adat_cn: "Tionghoa", adat_kr: "Korea", live: "Tinggal setelah menikah", lang: "Bahasa", totalBudget: "Budget total", rulesNote: "Quest dokumen otomatis berubah sesuai pilihan di atas.",
+    aboutTitle: "Tentang syarat dokumen", about: "Syarat dirangkum dari peraturan dan sumber publik per November 2026 (PMA 30/2024, SEMA 2/2023, aturan apostille, info F-6). Syarat bisa beda per kota dan sering berubah, jadi selalu konfirmasi ke KUA / Dukcapil, 구청, dan kedutaan sebelum mengurus.",
+    sources: "Sumber", applies: "quest aktif untuk pilihan kalian", optional: "Belum dipilih"
+  },
+  ko: {
+    tab_quest: "퀘스트", tab_gold: "골드", tab_guests: "하객", tab_vendors: "업체", tab_setup: "설정",
+    st_todo: "시작 전", st_progress: "진행 중", st_pending: "보류", st_review: "검토 중", st_done: "완료",
+    next: "다음 퀘스트", noNext: "모든 퀘스트 완료! 정말 대단해요!", map: "모험 지도", list: "퀘스트 목록",
+    f_prio: "우선순위", f_late: "지연", f_30: "30일 이내", f_done: "완료", f_all: "전체",
+    late: "지연", tight: "촉박", both: "함께", back: "뒤로", addQuest: "퀘스트 추가", badges: "배지",
+    stage: "구역", lv: "Lv", due: "마감일", dueAuto: "자동", dueReset: "자동 마감일 사용", status: "상태", notes: "메모",
+    notesPh: "담당자 이름, 대기 번호, 비용, 링크…", openLink: "공식 사이트 열기", close: "닫기", save: "저장", del: "삭제", cancel: "취소",
+    confirmDel: "정말 삭제할까요? 한 번 더 누르면 삭제돼요.", title: "제목", area: "구역", emptyArea: "선택한 조건에 해당하는 퀘스트가 없어요.",
+    setupTitle: "모험을 시작해요!", setupBody: "'설정'에서 이름, 날짜, 국적, 종교를 입력하면 퀘스트와 마감일이 자동으로 맞춰져요.", setupGo: "설정으로 가기",
+    sync_shared: "동기화됨: 변경 내용이 상대방 기기에도 바로 보여요.", sync_local: "로컬 모드: 이 기기에만 저장돼요.",
+    sync_off: "서버에 연결할 수 없어요. 자동으로 다시 시도해요.", pinTitle: "PIN 입력", pinBody: "이 Wedding Quest는 PIN으로 잠겨 있어요. 소유자에게 PIN을 물어보세요.", pinWrong: "PIN이 틀렸어요. 다시 입력하세요.", pinGo: "들어가기",
+    sync_ro: "보기 전용: 수정하려면 소유자에게 편집자로 초대해 달라고 하세요.", sync_wait: "공유 저장소에 연결 중…", sync_slow: "공유 저장소에 아직 연결되지 않았어요. 최신 데이터가 아닐 수 있어요.",
+    saveFail: "저장하지 못했어요. 잠시 후 다시 시도하세요.",
+    xpGain: "XP", lvUp: "레벨 업!",
+    gold_title: "골드 주머니", budget: "총예산", planned: "예상", actual: "실제 지출", paid: "지급 완료", left: "남은 예산",
+    addItem: "지출 추가", item: "항목 이름", category: "카테고리", amtPlan: "예상 비용", amtActual: "실제 비용", amtPaid: "지급한 금액", currency: "통화",
+    showIn: "표시 통화", rate: "환율: 1 KRW =", rateUnit: "IDR", byCat: "카테고리별", noItems: "아직 지출이 없어요. 예식장 계약금부터 추가해 보세요.",
+    guests_title: "하객 명단", addGuest: "하객 추가", name: "이름", side: "소속", group: "그룹", country: "국가", pax: "인원", events: "참석 행사",
+    invited: "청첩장 보냄", rsvp: "참석 여부", phone: "연락처", note: "메모", search: "이름 검색…",
+    rs_wait: "미응답", rs_yes: "참석", rs_no: "불참", invPax: "초대 인원", yesPax: "참석 인원", waitPax: "미응답", noPax: "불참",
+    noGuests: "아직 하객이 없어요. 가족부터 시작해요.",
+    vendors_title: "업체 목록", addVendor: "업체 추가", vname: "업체명", contact: "담당자", email: "이메일 / 인스타그램", price: "가격", payDue: "잔금 기한",
+    vstatus: "상태", rating: "평점", copy: "복사", copied: "복사됨", noVendors: "아직 업체가 없어요. 알아보는 업체 연락처를 여기에 저장하세요.",
+    setup_title: "모험 설정", bride: "신부", groom: "신랑", nat: "국적", rel: "종교", loc: "결혼식 장소", regFirst: "법적 혼인 등록을 먼저 하는 나라",
+    date2: "두 번째 나라 예식 날짜", start: "준비 시작일", wedding: "결혼식 날짜 (D-Day)", quick: "또는 시작일부터 기간 선택",
+    months: "개월", adat: "전통 예식", adat_cn: "중국계 전통", adat_kr: "한국 전통", live: "결혼 후 거주지", lang: "언어", totalBudget: "총예산", rulesNote: "서류 퀘스트는 위의 선택에 따라 자동으로 바뀌어요.",
+    aboutTitle: "서류 요건 안내", about: "2026년 11월 기준 법령과 공개 자료(종교부령 30/2024, 대법원 회람 2/2023, 아포스티유, F-6 안내)를 정리했어요. 지역마다 다르고 자주 바뀌니 꼭 KUA·Dukcapil, 구청, 대사관에 먼저 확인하세요.",
+    sources: "출처", applies: "개의 퀘스트가 활성화됨", optional: "미선택"
+  }
+};
+const OPT = {
+  nat: { ID: ["Indonesia (WNI)", "인도네시아"], KR: ["Korea", "한국"], OT: ["Negara lain", "기타 국가"] },
+  rel: { islam: ["Islam", "이슬람교"], protestan: ["Kristen Protestan", "개신교"], katolik: ["Katolik", "가톨릭"], hindu: ["Hindu", "힌두교"], buddha: ["Buddha", "불교"], konghucu: ["Khonghucu", "유교(공자교)"], none: ["Tidak beragama / lainnya", "무교·기타"] },
+  loc: { ID: ["Indonesia", "인도네시아"], KR: ["Korea", "한국"], BOTH: ["Dua-duanya", "두 나라 모두"] },
+  live: { ID: ["Indonesia", "인도네시아"], KR: ["Korea", "한국"], TBD: ["Belum tahu", "미정"] },
+  side: { bride: ["Pihak wanita", "신부 측"], groom: ["Pihak pria", "신랑 측"], both: ["Bersama", "공통"] },
+  group: { family: ["Keluarga", "가족"], friend: ["Teman", "친구"], work: ["Kantor", "직장"], other: ["Lainnya", "기타"] },
+  event: { ev1: ["Akad / pemberkatan", "혼례"], evID: ["Resepsi Indonesia", "인니 피로연"], evKR: ["예식 Korea", "한국 예식"] },
+  bcat: { venue: ["Venue", "예식장"], catering: ["Catering", "식대"], attire: ["Busana & MUA", "의상·메이크업"], photo: ["Foto & video", "사진·영상"], decor: ["Dekor & bunga", "장식·꽃"], rings: ["Cincin", "반지"], invite: ["Undangan & souvenir", "청첩장·답례품"], docs: ["Dokumen & legal", "서류·법무"], travel: ["Perjalanan & akomodasi", "항공·숙소"], gift: ["Seserahan / 예단", "예단·예물"], honeymoon: ["Bulan madu", "신혼여행"], other: ["Lainnya", "기타"] },
+  vstat: { research: ["Riset", "알아보는 중"], nego: ["Negosiasi", "협상 중"], booked: ["Booked", "예약 완료"], dp: ["DP dibayar", "계약금 지급"], paid: ["Lunas", "완납"] },
+  vcat: { venue: ["Venue / 웨딩홀", "예식장·웨딩홀"], wo: ["Wedding organizer", "웨딩플래너"], catering: ["Catering", "케이터링"], photo: ["Foto & video", "사진·영상"], sdm: ["스드메 / MUA & busana", "스드메·메이크업·의상"], decor: ["Dekor & bunga", "장식·꽃"], music: ["MC & musik", "사회·음악"], rings: ["Cincin", "반지"], invite: ["Undangan & souvenir", "청첩장·답례품"], translator: ["Penerjemah", "통역·번역"], notary: ["Notaris / legal", "공증·법무"], travel: ["Travel & hotel", "여행·숙소"], other: ["Lainnya", "기타"] }
+};
+const STATUSES = ["todo", "progress", "pending", "review", "done"];
+const LEVELS = [["Tunangan Pemula", "새내기 예비부부"], ["Penjelajah Rencana", "계획 탐험가"], ["Pemburu Dokumen", "서류 사냥꾼"], ["Penakluk Vendor", "업체 정복자"], ["Ahli Budget", "예산의 달인"], ["Pasangan Tangguh", "든든한 커플"], ["Siap Pelaminan", "결혼 준비 완료"], ["Pengantin Legendaris", "전설의 신랑신부"]];
+const SOURCES = [
+  ["Ketentuan WNA menikah di Indonesia (PMA 30/2024), detik.com", "https://news.detik.com/berita/d-7725372/syarat-pernikahan-campuran-di-indonesia-bagi-wna-cek-di-sini"],
+  ["SEMA 2/2023 & pencatatan nikah beda agama, detik.com", "https://news.detik.com/berita/d-6831689/tertutup-pintu-pencatatan-nikah-beda-agama-usai-terbit-surat-edaran-ma"],
+  ["Menikah dengan warga negara Korea Selatan, Hukumonline", "https://www.hukumonline.com/klinik/a/menikah-dengan-warga-negara-korea-selatan-lt4fea846707c98/"],
+  ["Hak milik tanah WNI dalam perkawinan campuran, Hukumonline", "https://www.hukumonline.com/klinik/detail/cl4623/hak-milik-untuk-wni-yg-kawin-dengan-wna"],
+  ["Indonesia bergabung Konvensi Apostille (HCCH)", "https://www.hcch.net/es/news-archive/details/?varevent=861"],
+  ["Layanan apostille Kementerian Hukum (AHU)", "https://apostille.ahu.go.id"],
+  ["F-6 결혼이민 비자 안내, 외교부", "https://overseas.mofa.go.kr/us-losangeles-en/wpge/m_20421/contents.do"],
+  ["국제결혼 안내 프로그램 이수 대상 고시, 법무부", "https://www.moj.go.kr/bbs/moj/156/540963/artclView.do"]
+];
+
+/* ---------- state ---------- */
+const today0 = () => { const d = new Date(); d.setHours(0, 0, 0, 0); return d; };
+const iso = d => { const z = new Date(d.getTime() - d.getTimezoneOffset() * 60000); return z.toISOString().slice(0, 10); };
+const parseD = s => { if (!s) return null; const [y, m, d] = s.split("-").map(Number); if (!y) return null; return new Date(y, m - 1, d); };
+const addDays = (d, n) => { const x = new Date(d); x.setDate(x.getDate() + n); return x; };
+const addMonths = (d, n) => { const x = new Date(d); x.setMonth(x.getMonth() + n); return x; };
+const diffDays = (a, b) => Math.round((b - a) / 86400000);
+
+function defaultCfg() {
+  const t = today0();
+  return { brideName: "", groomName: "", brideNat: "KR", groomNat: "ID", brideRel: "buddha", groomRel: "buddha", adat: ["cn", "kr"], loc: "ID", regFirst: "ID", date2: "",
+    start: iso(t), wedding: iso(addMonths(t, 12)), live: "TBD", budget: 0, budgetCur: "IDR", cur: "IDR", rate: 11.5 };
+}
+const S = {
+  cfg: defaultCfg(), cfgSaved: false, prog: {}, custom: {}, budget: {}, guests: {}, vendors: {},
+  lang: "id", tab: "quest", area: null, filter: "prio", gq: "", gside: "all",
+  mode: "wait", ro: false, slow: false
+};
+try { const l = localStorage.getItem("wq-lang"); if (l === "ko" || l === "id") S.lang = l; } catch (e) {}
+const L = () => (S.lang === "ko" ? 1 : 0);
+const t = k => (TX[S.lang] && TX[S.lang][k]) || TX.id[k] || k;
+const o = (group, key) => (OPT[group][key] ? OPT[group][key][L()] : "");
+const esc = s => String(s == null ? "" : s).replace(/[&<>"']/g, c => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+
+/* ---------- condition language: idents, !, &&, ||, () ---------- */
+function compileCond(src) {
+  if (!src) return () => true;
+  const toks = src.match(/[A-Za-z_]\w*|&&|\|\||!|\(|\)/g) || [];
+  let i = 0;
+  const peek = () => toks[i], next = () => toks[i++];
+  function prim() { const tk = next(); if (tk === "!") { const a = prim(); return f => !a(f); } if (tk === "(") { const a = or(); next(); return a; } return f => !!f[tk]; }
+  function and() { let a = prim(); while (peek() === "&&") { next(); const l = a, r = prim(); a = f => l(f) && r(f); } return a; }
+  function or() { let a = and(); while (peek() === "||") { next(); const l = a, r = and(); a = f => l(f) || r(f); } return a; }
+  return or();
+}
+DATA.quests.forEach(q => { q.fn = compileCond(q.c); });
+const AREA = Object.fromEntries(DATA.areas.map(a => [a.id, a]));
+
+function flags(c) {
+  const n = [c.brideNat, c.groomNat], r = [c.brideRel, c.groomRel];
+  const f = {};
+  f.hasID = n.includes("ID"); f.hasKR = n.includes("KR"); f.hasOT = n.includes("OT");
+  f.nonID = n.some(x => x !== "ID"); f.nonKR = n.some(x => x !== "KR"); f.mixedNat = n[0] !== n[1];
+  f.regID = c.loc === "ID" || (c.loc === "BOTH" && c.regFirst !== "KR");
+  f.regKR = c.loc === "KR" || (c.loc === "BOTH" && c.regFirst === "KR");
+  f.cerID = c.loc !== "KR"; f.cerKR = c.loc !== "ID";
+  const relSet = !!(r[0] && r[1]);
+  f.mixedRel = relSet && r[0] !== r[1]; f.noRel = r.includes("none");
+  f.bothIslam = r[0] === "islam" && r[1] === "islam"; f.anyIslam = r.includes("islam"); f.anyBuddha = r.includes("buddha");
+  const ad = Array.isArray(c.adat) ? c.adat : []; f.adatCN = ad.includes("cn"); f.adatKR = ad.includes("kr");
+  f.kua = f.regID && f.bothIslam;
+  f.dukcapil = f.regID && relSet && !f.bothIslam && !f.mixedRel && !f.noRel;
+  const one = relSet && !f.mixedRel ? r[0] : "";
+  f.relP = one === "protestan"; f.relK = one === "katolik"; f.relH = one === "hindu"; f.relB = one === "buddha"; f.relC = one === "konghucu";
+  const livKR = c.live === "KR" || c.live === "TBD", livID = c.live === "ID" || c.live === "TBD";
+  f.needF6 = f.hasKR && f.nonKR && livKR; f.needKITAS = f.hasID && f.nonID && livID;
+  f.reportKR = f.regID && f.hasKR;
+  f.travelFam = (f.hasKR && f.cerID) || (f.hasID && f.cerKR);
+  f.idFamToKR = f.hasID && f.cerKR; f.krFamToID = f.hasKR && f.cerID; f.bilingual = f.hasKR && f.hasID;
+  return f;
+}
+
+/* quests applicable now, with computed due dates */
+function activeQuests() {
+  const c = S.cfg, f = flags(c);
+  const start = parseD(c.start) || today0(), w1 = parseD(c.wedding) || addMonths(start, 12);
+  const w2 = parseD(c.date2);
+  const D = Math.max(1, diffDays(start, w1)), ratio = Math.min(1, D / 365);
+  const second = c.loc === "BOTH" ? (c.regFirst === "KR" ? "ID" : "KR") : null;
+  const list = DATA.quests.filter(q => q.fn(f)).map(q => {
+    const base = (second && q.ev === second && w2) ? w2 : w1;
+    let due = q.b <= 0 ? addDays(base, -q.b) : addDays(base, -Math.max(q.m, Math.round(q.b * ratio)));
+    const tight = q.b > 0 && due < start;
+    if (tight) due = start;
+    const p = S.prog[q.id] || {};
+    const ov = parseD(p.due);
+    return { id: q.id, area: q.a, who: q.w, xp: q.xp, title: q.t[L()], alt: q.t[1 - L()], desc: q.d[L()], link: q.l, due: ov || due, auto: due, over: !!ov, tight: tight && !ov, s: p.s || "todo", note: p.note || "", custom: false };
+  });
+  Object.entries(S.custom).forEach(([id, cq]) => {
+    list.push({ id, area: cq.a || "plan", who: "both", xp: 20, title: cq.t || "…", alt: "", desc: "", due: parseD(cq.due) || w1, auto: null, over: true, tight: false, s: cq.s || "todo", note: cq.note || "", custom: true });
+  });
+  return list;
+}
+const isLate = q => q.s !== "done" && q.due < today0();
+function byDue(a, b) { const ad = a.s === "done", bd = b.s === "done"; if (ad !== bd) return ad ? 1 : -1; return a.due - b.due; }
+
+function whoLabel(code) {
+  const c = S.cfg;
+  const p = [{ nat: c.brideNat, name: c.brideName || t("bride"), k: "bride" }, { nat: c.groomNat, name: c.groomName || t("groom"), k: "groom" }];
+  if (code === "both") return t("both");
+  if (code === "bride" || code === "groom") return p.find(x => x.k === code).name;
+  const pick = p.filter(x => code === "KR" ? x.nat === "KR" : code === "ID" ? x.nat === "ID" : code === "OT" ? x.nat === "OT" : code === "notID" ? x.nat !== "ID" : x.nat !== "KR");
+  return pick.length === 2 ? t("both") : pick.length ? pick[0].name : t("both");
+}
+
+/* ---------- formatting ---------- */
+const locale = () => (S.lang === "ko" ? "ko-KR" : "id-ID");
+const fmtDate = d => d ? d.toLocaleDateString(locale(), { day: "numeric", month: "short", year: "numeric" }) : "";
+function dLabel(d) { const n = diffDays(today0(), d); return n === 0 ? "D-DAY" : n > 0 ? "D-" + n : "D+" + (-n); }
+const toIDR = (amt, cur) => (cur === "KRW" ? (+amt || 0) * (+S.cfg.rate || 0) : (+amt || 0));
+const fromIDR = (idr, cur) => (cur === "KRW" ? (S.cfg.rate ? idr / S.cfg.rate : 0) : idr);
+function money(idr, compact) {
+  const cur = S.cfg.cur || "IDR", v = fromIDR(idr, cur);
+  const nf = new Intl.NumberFormat(cur === "KRW" ? "ko-KR" : "id-ID", compact ? { notation: "compact", maximumFractionDigits: 1 } : { maximumFractionDigits: 0 });
+  return (cur === "KRW" ? "₩" : "Rp ") + nf.format(Math.round(v));
+}
+const nativeMoney = (amt, cur) => (cur === "KRW" ? "₩" + new Intl.NumberFormat("ko-KR").format(+amt || 0) : "Rp " + new Intl.NumberFormat("id-ID").format(+amt || 0));
+
+/* ---------- storage: shared db when available, else this device ---------- */
+const COLS = ["prog", "custom", "budget", "guests", "vendors"];
+let DB = null;
+const chains = {};
+function localLoad() {
+  try { const raw = localStorage.getItem("wq-local"); if (!raw) return; const d = JSON.parse(raw); if (d.cfg) { S.cfg = Object.assign(defaultCfg(), d.cfg); S.cfgSaved = true; } COLS.forEach(k => { if (d[k]) S[k] = d[k]; }); } catch (e) {}
+}
+function localSave() { try { const d = { cfg: S.cfgSaved ? S.cfg : null }; COLS.forEach(k => d[k] = S[k]); localStorage.setItem("wq-local", JSON.stringify(d)); } catch (e) {} }
+function write(path, data) {
+  if (S.ro) return Promise.resolve();
+  if (GAS) return gasWrite(path, data);
+  if (!DB) { localSave(); return Promise.resolve(); }
+  const run = () => (data === null ? DB.doc(path).delete() : DB.doc(path).set(data));
+  chains[path] = (chains[path] || Promise.resolve()).then(run).catch(e => {
+    if (e && e.code === "invalid_argument" && S.mode === "shared") { S.ro = true; S.mode = "ro"; renderAll(); }
+    toast(t("saveFail"));
+  });
+  return chains[path];
+}
+function saveCfg() { S.cfgSaved = true; return write("config/main", Object.assign({}, S.cfg)); }
+function saveDoc(col, id, data) { if (data === null) delete S[col][id]; else S[col][id] = data; return write(col + "/" + id, data); }
+const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
+
+/* Google Apps Script backend: the page is served by the script, data lives in the owner's Google Sheet. */
+let GAS = false, gasRev = 0, gasPending = 0, gasTimer = null;
+const gasCall = (fn, ...args) => new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+const getPin = () => { try { return localStorage.getItem("wq-pin") || ""; } catch (e) { return ""; } };
+function gasApply(r) {
+  if (!r || r.same) return;
+  gasRev = r.rev;
+  const next = { prog: {}, custom: {}, budget: {}, guests: {}, vendors: {} };
+  let cfg = null;
+  r.docs.forEach(([col, id, json]) => { let v; try { v = JSON.parse(json); } catch (e) { return; } if (col === "config" && id === "main") cfg = v; else if (next[col]) next[col][id] = v; });
+  if (cfg) { S.cfg = Object.assign(defaultCfg(), cfg); S.cfgSaved = true; }
+  COLS.forEach(k => { S[k] = next[k]; });
+}
+async function gasPull(force) {
+  if (gasPending) return;
+  try {
+    const r = await gasCall("getAll", getPin(), force ? 0 : gasRev);
+    if (gasPending) return;
+    const was = S.mode; S.mode = "shared";
+    if (r && !r.same) { gasApply(r); renderAll(); } else if (was !== "shared") renderAll();
+  } catch (e) {
+    if (String(e && e.message || e).includes("PIN")) { askPin(true); return; }
+    if (S.mode !== "off") { S.mode = "off"; renderAll(); }
+  }
+}
+function gasWrite(path, data) {
+  const [col, id] = path.split("/");
+  gasPending++;
+  chains[path] = (chains[path] || Promise.resolve()).then(() => gasCall("put", getPin(), col, id, data === null ? "" : JSON.stringify(data)))
+    .then(() => { if (S.mode === "off") { S.mode = "shared"; renderAll(); } })
+    .catch(e => { if (String(e && e.message || e).includes("PIN")) askPin(true); else { S.mode = "off"; renderAll(); toast(t("saveFail")); } })
+    .finally(() => { gasPending--; if (!gasPending) setTimeout(() => gasPull(false), 400); });
+  return chains[path];
+}
+function askPin(wrong) {
+  if ($("#pinForm")) return;
+  openSheet(`<div class="sheet-h"><h2>${esc(t("pinTitle"))}</h2></div>
+    <form class="form" id="pinForm"><p style="margin:0">${esc(t("pinBody"))}</p>${wrong && getPin() ? `<p class="tag late" style="justify-self:start">${esc(t("pinWrong"))}</p>` : ""}
+      ${field("PIN", `<input id="pinIn" inputmode="numeric" autocomplete="off" required>`)}
+      <div class="row" style="justify-content:flex-end"><button class="btn pink">${esc(t("pinGo"))}</button></div></form>`);
+  const sw = $("#sw"); sw.replaceWith(sw.cloneNode(true)); // drop the backdrop-close handler: the PIN screen must stay
+  $("#pinForm").addEventListener("submit", e => { e.preventDefault(); try { localStorage.setItem("wq-pin", $("#pinIn").value.trim()); } catch (err) {} $("#sheetRoot").innerHTML = ""; gasPull(true); });
+  $("#pinIn").focus();
+}
+function connectGAS() {
+  GAS = true; S.mode = "wait"; renderAll();
+  gasPull(true);
+  clearInterval(gasTimer); gasTimer = setInterval(() => { if (!document.hidden) gasPull(false); }, 12000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) gasPull(false); });
+}
+
+async function connect() {
+  if (typeof google !== "undefined" && google.script && google.script.run) { connectGAS(); return; }
+  let db = null;
+  try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
+  if (!db) { S.mode = "local"; localLoad(); renderAll(); return; }
+  DB = db;
+  try { const u = await window.claude.use("user"); const can = u ? await u.can("data.write") : null; if (can === false) S.ro = true; } catch (e) {}
+  S.mode = S.ro ? "ro" : "shared";
+  let firstReal = false;
+  const timer = setTimeout(() => { if (!firstReal) { S.slow = true; renderAll(); } }, 10000);
+  const settle = meta => { if (!meta.fromCache && !firstReal) { firstReal = true; clearTimeout(timer); if (S.slow) { S.slow = false; } } };
+  const fail = () => { clearTimeout(timer); S.slow = true; renderAll(); };
+  db.doc("config/main").onSnapshot(snap => {
+    settle(snap.metadata);
+    if (snap.exists) { S.cfg = Object.assign(defaultCfg(), snap.data()); S.cfgSaved = true; }
+    renderAll();
+  }, fail);
+  COLS.forEach(col => {
+    db.collection(col).onSnapshot(qs => {
+      settle(qs.metadata);
+      const m = {}; qs.docs.forEach(d => { m[d.id] = Object.assign({}, d.data()); }); S[col] = m;
+      renderAll();
+    }, fail);
+  });
+  renderAll();
+}
+
+/* ---------- art ---------- */
+function catSVG(kind) {
+  const g = kind === "groom";
+  const fur = g ? "#FFFFFF" : "#FFFBF2", p1 = g ? "#B7B9C9" : "#F2A65A", p2 = g ? "#77798C" : "#8E5B3C";
+  const veil = g ? "" : `<path d="M28 40 Q60 -6 92 40 L104 118 Q60 132 16 118 Z" fill="#FFFFFF" fill-opacity=".75" stroke="#5A3A2C" stroke-width="2.5"/>`;
+  const outfit = g
+    ? `<path d="M30 112 Q60 138 90 112 L92 122 Q60 146 28 122 Z" fill="#8FC7EA" stroke="#5A3A2C" stroke-width="2.5"/><path d="M47 88 L60 96 L47 104 Z M73 88 L60 96 L73 104 Z" fill="#3D4F8A" stroke="#5A3A2C" stroke-width="2.5" stroke-linejoin="round"/><circle cx="60" cy="96" r="4" fill="#3D4F8A" stroke="#5A3A2C" stroke-width="2"/>`
+    : `<path d="M28 108 Q60 92 92 108 Q98 128 88 138 Q60 146 32 138 Q22 128 28 108 Z" fill="#F8BFCB" stroke="#5A3A2C" stroke-width="2.5"/><g transform="translate(60 112)"><circle r="7" fill="#FFFDF6" stroke="#5A3A2C" stroke-width="2"/><circle cx="-8" cy="4" r="5" fill="#F39AAE" stroke="#5A3A2C" stroke-width="2"/><circle cx="8" cy="4" r="5" fill="#F39AAE" stroke="#5A3A2C" stroke-width="2"/></g>`;
+  const bow = g ? "" : `<g transform="translate(84 26) rotate(18)"><path d="M0 0 L-12 -8 L-12 8 Z M0 0 L12 -8 L12 8 Z" fill="#E0647F" stroke="#5A3A2C" stroke-width="2.5" stroke-linejoin="round"/><circle r="4" fill="#E0647F" stroke="#5A3A2C" stroke-width="2"/></g>`;
+  return `<svg class="cat ${kind}" viewBox="0 0 120 150" aria-hidden="true">
+    <defs><clipPath id="hc-${kind}"><ellipse cx="60" cy="58" rx="40" ry="33"/></clipPath></defs>
+    ${veil}
+    <path d="M90 120 Q114 116 110 90" fill="none" stroke="#5A3A2C" stroke-width="10" stroke-linecap="round"/>
+    <path d="M90 120 Q114 116 110 90" fill="none" stroke="${p1}" stroke-width="5" stroke-linecap="round"/>
+    <ellipse cx="60" cy="116" rx="33" ry="27" fill="${fur}" stroke="#5A3A2C" stroke-width="3"/>
+    ${outfit}
+    <ellipse cx="46" cy="138" rx="9" ry="6" fill="${fur}" stroke="#5A3A2C" stroke-width="2.5"/>
+    <ellipse cx="74" cy="138" rx="9" ry="6" fill="${fur}" stroke="#5A3A2C" stroke-width="2.5"/>
+    <path d="M24 46 L26 14 L52 30 Z" fill="${g ? p1 : fur}" stroke="#5A3A2C" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M96 46 L94 14 L68 30 Z" fill="${g ? fur : p1}" stroke="#5A3A2C" stroke-width="3" stroke-linejoin="round"/>
+    <path d="M30 38 L31 22 L43 31 Z M90 38 L89 22 L77 31 Z" fill="#F8BFCB"/>
+    <ellipse cx="60" cy="58" rx="40" ry="33" fill="${fur}" stroke="#5A3A2C" stroke-width="3"/>
+    <g clip-path="url(#hc-${kind})">
+      <ellipse cx="${g ? 32 : 88}" cy="38" rx="22" ry="18" fill="${p1}"/>
+      <ellipse cx="${g ? 92 : 30}" cy="34" rx="12" ry="10" fill="${p2}"/>
+    </g>
+    <ellipse cx="60" cy="58" rx="40" ry="33" fill="none" stroke="#5A3A2C" stroke-width="3"/>
+    <path d="M40 60 q6 -7 12 0 M68 60 q6 -7 12 0" fill="none" stroke="#5A3A2C" stroke-width="3" stroke-linecap="round"/>
+    <path d="M55 68 q2.5 3 5 0 q2.5 3 5 0" fill="none" stroke="#5A3A2C" stroke-width="2.5" stroke-linecap="round"/>
+    <ellipse cx="36" cy="69" rx="6" ry="3.5" fill="#F39AAE" opacity=".8"/>
+    <ellipse cx="84" cy="69" rx="6" ry="3.5" fill="#F39AAE" opacity=".8"/>
+    ${bow}
+  </svg>`;
+}
+function treeSVG() {
+  const blooms = [[30, 40], [58, 30], [86, 44], [44, 58], [76, 62], [100, 70], [20, 66]].map(([x, y]) => `<g transform="translate(${x} ${y})"><circle r="4" fill="#FFFDF6"/><circle r="1.6" fill="#E0647F"/></g>`).join("");
+  return `<svg class="tree" viewBox="0 0 130 150" aria-hidden="true">
+    <path d="M58 150 L60 96 Q52 84 44 80 M60 100 Q70 88 80 84" stroke="#7A4E36" stroke-width="10" stroke-linecap="round" fill="none"/>
+    <path d="M58 150 L60 96" stroke="#5A3A2C" stroke-width="3" fill="none"/>
+    <g fill="#F8BFCB" stroke="#5A3A2C" stroke-width="3">
+      <circle cx="36" cy="58" r="30"/><circle cx="94" cy="58" r="30"/><circle cx="64" cy="40" r="34"/><circle cx="64" cy="72" r="28"/>
+    </g>
+    <g fill="#F8BFCB"><circle cx="36" cy="58" r="27"/><circle cx="94" cy="58" r="27"/><circle cx="64" cy="40" r="31"/><circle cx="64" cy="72" r="25"/></g>
+    <g fill="#F39AAE" opacity=".55"><circle cx="50" cy="70" r="12"/><circle cx="88" cy="74" r="10"/></g>
+    ${blooms}
+  </svg>`;
+}
+const heartSVG = `<svg class="heart" viewBox="0 0 32 30" aria-hidden="true"><path d="M16 28 C-6 14 4 -4 16 7 C28 -4 38 14 16 28 Z" fill="#E0647F" stroke="#5A3A2C" stroke-width="2.5" stroke-linejoin="round"/></svg>`;
+const ICON = {
+  coin: `<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><ellipse cx="13" cy="15" rx="10" ry="8" fill="#E3A126" stroke="#5A3A2C" stroke-width="2"/><ellipse cx="13" cy="12" rx="10" ry="8" fill="#F5C34E" stroke="#5A3A2C" stroke-width="2"/><path d="M9 12 h8" stroke="#5A3A2C" stroke-width="2" stroke-linecap="round"/></svg>`,
+  star: `<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><path d="M13 2 L16 9.5 L24 10 L18 15.5 L20 23.5 L13 19 L6 23.5 L8 15.5 L2 10 L10 9.5 Z" fill="#F5C34E" stroke="#5A3A2C" stroke-width="2" stroke-linejoin="round"/></svg>`,
+  cal: `<svg viewBox="0 0 26 26" width="26" height="26" aria-hidden="true"><rect x="3" y="5" width="20" height="18" rx="4" fill="#FFFDF6" stroke="#5A3A2C" stroke-width="2"/><path d="M3 11 h20" stroke="#5A3A2C" stroke-width="2"/><rect x="3" y="5" width="20" height="6" rx="3" fill="#E0647F" stroke="#5A3A2C" stroke-width="2"/><path d="M8 3 v4 M18 3 v4" stroke="#5A3A2C" stroke-width="2" stroke-linecap="round"/><path d="M13 20 C7 16 10 12 13 15 C16 12 19 16 13 20 Z" fill="#E0647F"/></svg>`,
+  chest: `<svg class="chest" viewBox="0 0 30 30" aria-hidden="true"><rect x="3" y="11" width="24" height="15" rx="3" fill="#C9A27A" stroke="#5A3A2C" stroke-width="2"/><path d="M3 14 Q15 0 27 14" fill="#B78B5F" stroke="#5A3A2C" stroke-width="2"/><rect x="12" y="13" width="6" height="7" rx="1.5" fill="#F5C34E" stroke="#5A3A2C" stroke-width="2"/></svg>`,
+  chestOpen: `<svg class="chest" viewBox="0 0 30 30" aria-hidden="true"><path d="M5 4 L25 4 L27 12 L3 12 Z" fill="#B78B5F" stroke="#5A3A2C" stroke-width="2" stroke-linejoin="round"/><rect x="3" y="12" width="24" height="14" rx="3" fill="#C9A27A" stroke="#5A3A2C" stroke-width="2"/><circle cx="15" cy="11" r="4" fill="#F5C34E" stroke="#5A3A2C" stroke-width="1.5"/></svg>`,
+  scroll: `<svg viewBox="0 0 30 30" width="28" height="28" aria-hidden="true"><rect x="6" y="5" width="18" height="21" rx="3" fill="#FFFDF6" stroke="#5A3A2C" stroke-width="2"/><path d="M10 11 h10 M10 15 h10 M10 19 h6" stroke="#5A3A2C" stroke-width="2" stroke-linecap="round"/><circle cx="22" cy="22" r="5" fill="#E0647F" stroke="#5A3A2C" stroke-width="2"/></svg>`,
+  people: `<svg viewBox="0 0 30 30" width="28" height="28" aria-hidden="true"><circle cx="11" cy="11" r="5" fill="#FFFDF6" stroke="#5A3A2C" stroke-width="2"/><circle cx="20" cy="12" r="4" fill="#F8BFCB" stroke="#5A3A2C" stroke-width="2"/><path d="M3 25 Q11 14 19 25 Z" fill="#8FC7EA" stroke="#5A3A2C" stroke-width="2" stroke-linejoin="round"/><path d="M15 25 Q21 16 27 25 Z" fill="#A3DCCF" stroke="#5A3A2C" stroke-width="2" stroke-linejoin="round"/></svg>`,
+  shop: `<svg viewBox="0 0 30 30" width="28" height="28" aria-hidden="true"><rect x="5" y="13" width="20" height="13" rx="2" fill="#FFFDF6" stroke="#5A3A2C" stroke-width="2"/><path d="M3 13 L6 5 H24 L27 13 Z" fill="#F8BFCB" stroke="#5A3A2C" stroke-width="2" stroke-linejoin="round"/><path d="M10 5 L9 13 M15 5 V13 M20 5 L21 13" stroke="#5A3A2C" stroke-width="2"/><rect x="12" y="18" width="6" height="8" fill="#A3DCCF" stroke="#5A3A2C" stroke-width="2"/></svg>`,
+  gear: `<svg viewBox="0 0 30 30" width="28" height="28" aria-hidden="true"><path d="M15 3 l2.4 3.2 3.9-.9.6 4 3.6 1.8-1.8 3.6 1.8 3.6-3.6 1.8-.6 4-3.9-.9L15 27l-2.4-3.2-3.9.9-.6-4-3.6-1.8L6.3 15 4.5 11.4l3.6-1.8.6-4 3.9.9Z" fill="#A3DCCF" stroke="#5A3A2C" stroke-width="2" stroke-linejoin="round"/><circle cx="15" cy="15" r="4.5" fill="#FFFDF6" stroke="#5A3A2C" stroke-width="2"/></svg>`
+};
+ICON.gold = ICON.coin.replace('width="26" height="26"', 'width="28" height="28"');
+
+/* ---------- render ---------- */
+const $ = s => document.querySelector(s);
+const view = () => $("#view");
+let pendingRender = false;
+function editingInView() { const a = document.activeElement; return !!a && view().contains(a) && (a.tagName === "TEXTAREA" || (a.tagName === "INPUT" && !/radio|checkbox/.test(a.type))); }
+function renderAll() {
+  if (editingInView()) { pendingRender = true; renderHud(); return; }
+  pendingRender = false;
+  renderHud(); renderTabs(); renderView();
+}
+document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender && !editingInView()) renderAll(); }, 0));
+
+function stats() {
+  const qs = activeQuests();
+  const total = qs.reduce((s, q) => s + q.xp, 0) || 1, earned = qs.filter(q => q.s === "done").reduce((s, q) => s + q.xp, 0);
+  const lvIdx = Math.min(LEVELS.length - 1, Math.floor((earned / total) * LEVELS.length));
+  return { qs, total, earned, lvIdx };
+}
+function budgetTotals() {
+  let plan = 0, act = 0, paid = 0;
+  Object.values(S.budget).forEach(b => { plan += toIDR(b.plan, b.cur); act += toIDR(b.actual, b.cur); paid += toIDR(b.paid, b.cur); });
+  const bud = toIDR(S.cfg.budget, S.cfg.budgetCur);
+  return { bud, plan, act, paid, left: bud - Math.max(act, 0) };
+}
+
+function renderHud() {
+  const st = stats(), bt = budgetTotals();
+  const wd = parseD(S.cfg.wedding);
+  $("#hud").innerHTML = `
+    <div class="pill" title="${esc(t("left"))}"><span class="ic">${ICON.coin}</span><span class="val">${S.cfg.budget ? money(bt.left, true) : "—"}</span></div>
+    <div class="pill" title="XP"><span class="ic">${ICON.star}</span><span class="val">${t("lv")}.${st.lvIdx + 1}<span class="xpv"> · ${st.earned} XP</span></span></div>
+    <div class="pill dday" title="${esc(t("wedding"))}"><span class="ic">${ICON.cal}</span><span class="val">${wd ? dLabel(wd) : "—"}</span></div>
+    <button class="roundbtn" id="langBtn" aria-label="Bahasa / 언어">${S.lang === "id" ? "한" : "ID"}</button>
+    <button class="roundbtn sync" data-s="${S.mode}" id="syncBtn" aria-label="Sync">☁︎</button>`;
+}
+function renderTabs() {
+  const tabs = [["quest", ICON.scroll], ["gold", ICON.gold], ["guests", ICON.people], ["vendors", ICON.shop], ["setup", ICON.gear]];
+  $("#tabs").innerHTML = tabs.map(([k, ic]) => `<button class="tab" data-tab="${k}" ${S.tab === k ? 'aria-current="page"' : ""}><span class="ti">${ic}</span>${esc(t("tab_" + k))}</button>`).join("");
+}
+function renderView() {
+  const v = view();
+  const fn = { quest: S.area ? viewArea : viewHome, gold: viewGold, guests: viewGuests, vendors: viewVendors, setup: viewSetup }[S.tab];
+  v.innerHTML = syncBanner() + fn();
+}
+function syncBanner() {
+  if (S.mode === "shared" && !S.slow) return "";
+  const k = S.mode === "wait" ? "sync_wait" : S.mode === "local" ? "sync_local" : S.mode === "ro" ? "sync_ro" : S.mode === "off" ? "sync_off" : "sync_slow";
+  return `<div class="banner">${esc(t(S.slow && S.mode === "shared" ? "sync_slow" : k))}</div>`;
+}
+
+function statusSelect(q) {
+  return `<select class="st" data-q="${esc(q.id)}" data-v="${q.s}" aria-label="${esc(t("status"))}" ${S.ro ? "disabled" : ""}>${STATUSES.map(s => `<option value="${s}" ${q.s === s ? "selected" : ""}>${esc(t("st_" + s))}</option>`).join("")}</select>`;
+}
+function questCard(q) {
+  const a = AREA[q.area] || AREA.plan;
+  return `<div class="q ${q.s === "done" ? "is-done" : ""}">
+    <span class="em" aria-hidden="true">${a.icon}</span>
+    <button class="main" data-open="${esc(q.id)}">
+      <span class="qt">${esc(q.title)}</span>
+      <span class="meta"><span class="due">${fmtDate(q.due)} · ${dLabel(q.due)}</span>
+        ${isLate(q) ? `<span class="tag late">${esc(t("late"))}</span>` : ""}${q.tight && q.s !== "done" ? `<span class="tag tight">${esc(t("tight"))}</span>` : ""}
+        <span class="tag who">${esc(whoLabel(q.who))}</span><span class="tag xp">+${q.xp} XP</span></span>
+    </button>
+    ${statusSelect(q)}
+  </div>`;
+}
+
+function viewHome() {
+  const st = stats(), qs = st.qs;
+  const areas = DATA.areas.map(a => { const l = qs.filter(q => q.area === a.id); const d = l.filter(q => q.s === "done").length; return { a, n: l.length, d }; });
+  const cur = areas.find(x => x.n && x.d < x.n) || areas[areas.length - 1];
+  const pct = cur.n ? Math.round(cur.d / cur.n * 100) : 100;
+  const upcoming = qs.filter(q => q.s !== "done").sort(byDue).slice(0, 3);
+  const lv = LEVELS[st.lvIdx][L()];
+  const lvPct = Math.round(st.earned / st.total * 100);
+  let list = qs.slice();
+  const t0 = today0();
+  if (S.filter === "prio") list = list.filter(q => q.s !== "done").sort(byDue).slice(0, 8);
+  else if (S.filter === "late") list = list.filter(isLate).sort(byDue);
+  else if (S.filter === "30") list = list.filter(q => q.s !== "done" && diffDays(t0, q.due) <= 30).sort(byDue);
+  else if (S.filter === "done") list = list.filter(q => q.s === "done").sort((a, b) => b.due - a.due);
+  else list.sort(byDue);
+  const lateN = qs.filter(isLate).length;
+  const setup = !S.cfgSaved ? `<div class="panel stack"><h2>${esc(t("setupTitle"))}</h2><p style="margin:0">${esc(t("setupBody"))}</p><div><button class="btn pink" data-tab="setup">${esc(t("setupGo"))}</button></div></div>` : "";
+  return `
+    ${setup}
+    <section class="stage" aria-label="${esc(t("stage"))}">
+      <div class="stage-top"><h2>${cur.a.icon} ${esc(cur.a.t[L()])}</h2><span class="small muted">${cur.d}/${cur.n}</span></div>
+      <div class="bar"><i style="width:${pct}%"></i>
+        <span style="position:absolute;left:50%;top:50%">${pct >= 50 ? ICON.chestOpen : ICON.chest}</span>
+        <span style="position:absolute;left:calc(100% - 6px);top:50%">${pct >= 100 ? ICON.chestOpen : ICON.chest}</span>
+      </div>
+    </section>
+    <section class="scene" aria-label="${esc(t("next"))}">
+      <div class="tree" style="left:-18px;top:46px">${treeSVG()}</div>
+      <div class="tree" style="right:-22px;top:62px;width:112px">${treeSVG()}</div>
+      <div class="bubble"><h3>${esc(t("next"))}</h3>
+        ${upcoming.length ? upcoming.map(q => `<button data-open="${esc(q.id)}"><span class="dd">${dLabel(q.due)}</span><span class="tt">${esc(q.title)}</span></button>`).join("") : `<div class="small">${esc(t("noNext"))}</div>`}
+      </div>
+      <div class="cats" id="cats">${catSVG("groom")}${heartSVG}${catSVG("bride")}</div>
+    </section>
+    <section class="panel" style="padding:10px 14px">
+      <div class="row" style="justify-content:space-between"><b class="display" style="font-size:17px">${t("lv")}.${st.lvIdx + 1} ${esc(lv)}</b><span class="small muted">${st.earned} / ${st.total} XP</span></div>
+      <div class="xpbar" style="margin-top:6px"><i style="width:${lvPct}%"></i></div>
+    </section>
+    <div class="sec-h"><h2>${esc(t("map"))}</h2></div>
+    <div class="areas">${areas.map(x => `<button class="area ${x.n && x.d === x.n ? "done" : ""}" data-area="${x.a.id}">
+      <span class="em" aria-hidden="true">${x.a.icon}</span><b>${esc(x.a.t[L()])}</b>
+      <span class="mini"><i style="width:${x.n ? Math.round(x.d / x.n * 100) : 0}%"></i></span><span class="cnt">${x.d}/${x.n}</span></button>`).join("")}</div>
+    <div class="sec-h"><h2>${esc(t("badges"))}</h2></div>
+    <div class="badges">${areas.map(x => `<span class="badge ${x.n && x.d === x.n ? "" : "locked"}" title="${esc(x.a.t[L()])}">${x.a.icon}</span>`).join("")}</div>
+    <div class="sec-h"><h2>${esc(t("list"))}</h2></div>
+    <div class="chips" role="group">${[["prio", t("f_prio")], ["late", t("f_late") + (lateN ? " · " + lateN : "")], ["30", t("f_30")], ["done", t("f_done")], ["all", t("f_all")]].map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${S.filter === k}">${esc(l)}</button>`).join("")}</div>
+    <div class="qlist">${list.length ? list.map(questCard).join("") : `<div class="panel empty muted">${esc(t("emptyArea"))}</div>`}</div>`;
+}
+
+function viewArea() {
+  const a = AREA[S.area];
+  const qs = activeQuests().filter(q => q.area === a.id).sort(byDue);
+  const d = qs.filter(q => q.s === "done").length;
+  return `
+    <div class="row" style="justify-content:space-between"><button class="btn small" data-back="1">← ${esc(t("back"))}</button>
+      ${S.ro ? "" : `<button class="btn small pink" data-addq="${a.id}">+ ${esc(t("addQuest"))}</button>`}</div>
+    <section class="stage"><div class="stage-top"><h2>${a.icon} ${esc(a.t[L()])}</h2><span class="small muted">${d}/${qs.length}</span></div>
+      <p class="small" style="margin:0 0 8px">${esc(a.d[L()])}</p>
+      <div class="bar"><i style="width:${qs.length ? Math.round(d / qs.length * 100) : 0}%"></i></div></section>
+    <div class="qlist">${qs.length ? qs.map(questCard).join("") : `<div class="panel empty muted">${esc(t("emptyArea"))}</div>`}</div>`;
+}
+
+/* gold */
+function viewGold() {
+  const bt = budgetTotals(), items = Object.entries(S.budget);
+  const cats = {};
+  items.forEach(([, b]) => { const k = b.cat || "other"; cats[k] = (cats[k] || 0) + toIDR(b.actual || b.plan, b.cur); });
+  const maxC = Math.max(1, ...Object.values(cats));
+  return `
+    <div class="sec-h" style="margin-top:4px"><h2>${esc(t("gold_title"))}</h2>${S.ro ? "" : `<button class="btn small gold" data-additem="1">+ ${esc(t("addItem"))}</button>`}</div>
+    <div class="panel stack">
+      <div class="row" style="justify-content:space-between">
+        <div class="seg" role="radiogroup" aria-label="${esc(t("showIn"))}">${["IDR", "KRW"].map(c => `<label><input type="radio" name="curShow" value="${c}" ${S.cfg.cur === c ? "checked" : ""} data-cur="1"><span>${c}</span></label>`).join("")}</div>
+        <label class="row small" style="gap:6px"><span>${esc(t("rate"))}</span><input id="rateIn" type="number" step="0.01" min="0" value="${esc(S.cfg.rate)}" style="width:80px;padding:6px 8px;border:2px solid var(--line);border-radius:10px;background:var(--paper)" ${S.ro ? "disabled" : ""}><span>${t("rateUnit")}</span></label>
+      </div>
+      <div class="tiles">
+        <div class="tile"><div class="k">${esc(t("budget"))}</div><div class="v">${S.cfg.budget ? money(bt.bud) : "—"}</div></div>
+        <div class="tile"><div class="k">${esc(t("planned"))}</div><div class="v">${money(bt.plan)}</div></div>
+        <div class="tile"><div class="k">${esc(t("actual"))}</div><div class="v">${money(bt.act)}</div></div>
+        <div class="tile"><div class="k">${esc(t("paid"))}</div><div class="v">${money(bt.paid)}</div></div>
+        <div class="tile" style="background:${bt.left < 0 ? "var(--pink)" : "var(--st-done)"}"><div class="k">${esc(t("left"))}</div><div class="v">${S.cfg.budget ? money(bt.left) : "—"}</div></div>
+      </div>
+      ${S.cfg.budget ? `<div class="bar"><i style="width:${Math.min(100, Math.round(bt.act / Math.max(1, bt.bud) * 100))}%;background:linear-gradient(#FFD978,#F5C34E)"></i></div>` : `<p class="small muted" style="margin:0">${esc(t("totalBudget"))}: ${esc(t("tab_setup"))} →</p>`}
+    </div>
+    ${Object.keys(cats).length ? `<div class="panel"><h3 style="font-size:16px;margin-bottom:8px">${esc(t("byCat"))}</h3><div class="catbars">${Object.entries(cats).sort((a, b) => b[1] - a[1]).map(([k, v]) => `<div class="catbar"><span>${esc(o("bcat", k))}</span><span class="track"><i style="width:${Math.round(v / maxC * 100)}%"></i></span><span class="n">${money(v, true)}</span></div>`).join("")}</div></div>` : ""}
+    <div class="qlist">${items.length ? items.sort((a, b) => (a[1].cat || "").localeCompare(b[1].cat || "")).map(([id, b]) => `
+      <button class="item" data-edititem="${esc(id)}"><b>${esc(b.name)}</b><span class="r">${nativeMoney(b.actual || b.plan, b.cur)}</span>
+        <span class="sub"><span class="tag">${esc(o("bcat", b.cat || "other"))}</span>${b.cur !== S.cfg.cur ? `<span>≈ ${money(toIDR(b.actual || b.plan, b.cur))}</span>` : ""}
+        ${(+b.paid) >= (+(b.actual || b.plan)) && (+b.paid) > 0 ? `<span class="tag" style="background:var(--st-done)">${esc(t("paid"))}</span>` : (+b.paid) > 0 ? `<span>${esc(t("paid"))}: ${nativeMoney(b.paid, b.cur)}</span>` : ""}</span></button>`).join("") : `<div class="panel empty muted">${esc(t("noItems"))}</div>`}</div>`;
+}
+
+/* guests */
+function viewGuests() {
+  const all = Object.entries(S.guests);
+  const sum = (fn) => all.filter(([, g]) => fn(g)).reduce((s, [, g]) => s + (+g.pax || 1), 0);
+  const q = S.gq.trim().toLowerCase();
+  const list = all.filter(([, g]) => (S.gside === "all" || g.side === S.gside) && (!q || (g.name || "").toLowerCase().includes(q))).sort((a, b) => (a[1].name || "").localeCompare(b[1].name || ""));
+  const rsTag = r => `<span class="tag" style="background:${r === "yes" ? "var(--st-done)" : r === "no" ? "var(--pink)" : "var(--st-todo)"}">${esc(t("rs_" + (r || "wait")))}</span>`;
+  return `
+    <div class="sec-h" style="margin-top:4px"><h2>${esc(t("guests_title"))}</h2>${S.ro ? "" : `<button class="btn small mint" data-addguest="1">+ ${esc(t("addGuest"))}</button>`}</div>
+    <div class="tiles">
+      <div class="tile"><div class="k">${esc(t("invPax"))}</div><div class="v">${sum(() => true)}</div></div>
+      <div class="tile"><div class="k">${esc(t("yesPax"))}</div><div class="v">${sum(g => g.rsvp === "yes")}</div></div>
+      <div class="tile"><div class="k">${esc(t("waitPax"))}</div><div class="v">${sum(g => !g.rsvp || g.rsvp === "wait")}</div></div>
+      <div class="tile"><div class="k">${esc(t("noPax"))}</div><div class="v">${sum(g => g.rsvp === "no")}</div></div>
+    </div>
+    <div class="small muted">${["bride", "groom", "both"].map(s => `${esc(o("side", s))}: <b>${sum(g => g.side === s)}</b>`).join(" · ")} · ID: <b>${sum(g => g.country === "ID")}</b> · KR: <b>${sum(g => g.country === "KR")}</b></div>
+    <input class="search" id="gSearch" type="search" placeholder="${esc(t("search"))}" value="${esc(S.gq)}" aria-label="${esc(t("search"))}">
+    <div class="chips">${[["all", t("f_all")], ["bride", o("side", "bride")], ["groom", o("side", "groom")], ["both", o("side", "both")]].map(([k, l]) => `<button class="chip" data-gside="${k}" aria-pressed="${S.gside === k}">${esc(l)}</button>`).join("")}</div>
+    <div class="qlist">${list.length ? list.map(([id, g]) => `
+      <button class="item" data-editguest="${esc(id)}"><b>${esc(g.name)}</b><span class="r">${+g.pax || 1} ${S.lang === "ko" ? "명" : "org"}</span>
+        <span class="sub">${rsTag(g.rsvp)}<span class="tag">${esc(o("side", g.side || "both"))}</span><span class="tag">${esc(g.country || "—")}</span>${g.invited ? `<span class="tag" style="background:var(--mint)">✉ ${esc(t("invited"))}</span>` : ""}${(g.events || []).map(e => `<span>${esc(o("event", e))}</span>`).join(" · ")}</span></button>`).join("") : `<div class="panel empty muted">${esc(all.length ? t("emptyArea") : t("noGuests"))}</div>`}</div>`;
+}
+
+/* vendors */
+function viewVendors() {
+  const all = Object.entries(S.vendors).sort((a, b) => (a[1].cat || "").localeCompare(b[1].cat || "") || (a[1].name || "").localeCompare(b[1].name || ""));
+  return `
+    <div class="sec-h" style="margin-top:4px"><h2>${esc(t("vendors_title"))}</h2>${S.ro ? "" : `<button class="btn small pink" data-addvendor="1">+ ${esc(t("addVendor"))}</button>`}</div>
+    <div class="qlist">${all.length ? all.map(([id, v]) => `
+      <div class="item" style="cursor:default">
+        <b>${esc(v.name)}</b><span class="r">${v.price ? nativeMoney(v.price, v.cur) : ""}</span>
+        <span class="sub"><span class="tag">${esc(o("vcat", v.cat || "other"))}</span><span class="tag" style="background:${v.status === "paid" ? "var(--st-done)" : v.status === "booked" || v.status === "dp" ? "var(--mint)" : "var(--st-todo)"}">${esc(o("vstat", v.status || "research"))}</span>${v.rating ? `<span aria-label="${v.rating}/5">${"★".repeat(v.rating)}${"☆".repeat(5 - v.rating)}</span>` : ""}${v.payDue ? `<span>${esc(t("payDue"))}: ${fmtDate(parseD(v.payDue))}</span>` : ""}</span>
+        ${v.contact || v.phone || v.email ? `<span class="sub" style="color:var(--ink)">${v.contact ? `<span>${esc(v.contact)}</span>` : ""}${v.phone ? `<span style="user-select:all;font-weight:800">${esc(v.phone)}</span><button class="btn small" data-copy="${esc(v.phone)}">${esc(t("copy"))}</button>` : ""}${v.email ? `<span style="user-select:all">${esc(v.email)}</span>` : ""}</span>` : ""}
+        ${v.note ? `<span class="sub">${esc(v.note)}</span>` : ""}
+        <span class="sub"><button class="btn small" data-editvendor="${esc(id)}">✎ ${S.lang === "ko" ? "수정" : "Ubah"}</button></span>
+      </div>`).join("") : `<div class="panel empty muted">${esc(t("noVendors"))}</div>`}</div>`;
+}
+
+/* setup */
+function seg(name, group, val, extra) {
+  return `<div class="seg" role="radiogroup">${Object.keys(OPT[group]).map(k => `<label><input type="radio" name="${name}" value="${k}" ${val === k ? "checked" : ""} data-cfg="${name}" ${extra || ""}><span>${esc(o(group, k))}</span></label>`).join("")}</div>`;
+}
+function relSelect(name, val) {
+  return `<select data-cfg="${name}" id="${name}"><option value="" ${!val ? "selected" : ""}>${esc(t("optional"))}</option>${Object.keys(OPT.rel).map(k => `<option value="${k}" ${val === k ? "selected" : ""}>${esc(o("rel", k))}</option>`).join("")}</select>`;
+}
+function viewSetup() {
+  const c = S.cfg, n = activeQuests().length, ro = S.ro ? "disabled" : "";
+  const person = k => `<div class="person"><h3>${catSVG(k).replace('class="cat ' + k + '"', 'class="cat" style="width:34px"')} ${esc(t(k))}</h3>
+      <div class="grid2">
+        <label class="f"><span>${esc(t("name"))}</span><input id="${k}Name" data-cfg="${k}Name" value="${esc(c[k + "Name"])}" autocomplete="off"></label>
+        <label class="f"><span>${esc(t("rel"))}</span>${relSelect(k + "Rel", c[k + "Rel"])}</label>
+      </div>
+      <div class="f" style="margin-top:10px"><span>${esc(t("nat"))}</span>${seg(k + "Nat", "nat", c[k + "Nat"])}</div></div>`;
+  return `
+    <div class="sec-h" style="margin-top:4px"><h2>${esc(t("setup_title"))}</h2></div>
+    <fieldset class="stack" ${ro}>
+      <div class="panel stack">${person("bride")}${person("groom")}</div>
+      <div class="panel stack">
+        <div class="f"><span>${esc(t("loc"))}</span>${seg("loc", "loc", c.loc)}</div>
+        ${c.loc === "BOTH" ? `<div class="f"><span>${esc(t("regFirst"))}</span><div class="seg">${["ID", "KR"].map(k => `<label><input type="radio" name="regFirst" value="${k}" ${c.regFirst === k ? "checked" : ""} data-cfg="regFirst"><span>${esc(o("loc", k))}</span></label>`).join("")}</div></div>` : ""}
+        <div class="f"><span>${esc(t("adat"))}</span><div class="seg">${["cn", "kr"].map(k => `<label><input type="checkbox" value="${k}" data-adat="1" ${(c.adat || []).includes(k) ? "checked" : ""}><span>${esc(t("adat_" + k))}</span></label>`).join("")}</div></div>
+        <div class="f"><span>${esc(t("live"))}</span>${seg("live", "live", c.live)}</div>
+        <p class="small muted" style="margin:0">${esc(t("rulesNote"))} <b>${n}</b> ${esc(t("applies"))}.</p>
+      </div>
+      <div class="panel stack">
+        <div class="grid2">
+          <label class="f"><span>${esc(t("start"))}</span><input type="date" id="start" data-cfg="start" value="${esc(c.start)}"></label>
+          <label class="f"><span>${esc(t("wedding"))}</span><input type="date" id="wedding" data-cfg="wedding" value="${esc(c.wedding)}"></label>
+          ${c.loc === "BOTH" ? `<label class="f"><span>${esc(t("date2"))}</span><input type="date" id="date2" data-cfg="date2" value="${esc(c.date2)}"></label>` : ""}
+        </div>
+        <div class="f"><span>${esc(t("quick"))}</span><div class="row">${[3, 6, 9, 12, 18, 24].map(m => `<button type="button" class="btn small" data-months="${m}">${m} ${esc(t("months"))}</button>`).join("")}</div></div>
+      </div>
+      <div class="panel stack">
+        <div class="grid2">
+          <label class="f"><span>${esc(t("totalBudget"))}</span><input type="number" min="0" step="any" id="budgetIn" data-cfg="budget" value="${esc(c.budget || "")}"></label>
+          <label class="f"><span>${esc(t("currency"))}</span><select id="budgetCur" data-cfg="budgetCur">${["IDR", "KRW"].map(k => `<option ${c.budgetCur === k ? "selected" : ""}>${k}</option>`).join("")}</select></label>
+        </div>
+      </div>
+    </fieldset>
+    <div class="panel stack">
+      <div class="f"><span>${esc(t("lang"))}</span><div class="seg">${[["id", "Bahasa Indonesia"], ["ko", "한국어"]].map(([k, l]) => `<label><input type="radio" name="lang" value="${k}" ${S.lang === k ? "checked" : ""} data-lang="1"><span>${l}</span></label>`).join("")}</div></div>
+    </div>
+    <div class="panel stack">
+      <h3 style="font-size:17px">${esc(t("aboutTitle"))}</h3>
+      <p style="margin:0;max-width:65ch">${esc(t("about"))}</p>
+      <details><summary class="display" style="cursor:pointer">${esc(t("sources"))}</summary><ul class="src small">${SOURCES.map(([l, u]) => `<li><a href="${u}" target="_blank" rel="noopener">${esc(l)}</a></li>`).join("")}</ul></details>
+    </div>`;
+}
+
+/* ---------- sheets ---------- */
+function openSheet(html, onMount) {
+  $("#sheetRoot").innerHTML = `<div class="sheet-wrap" id="sw"><div class="sheet" role="dialog" aria-modal="true">${html}</div></div>`;
+  const sw = $("#sw");
+  sw.addEventListener("click", e => { if (e.target === sw || e.target.closest("[data-close]")) closeSheet(); });
+  const first = sw.querySelector("input,select,textarea,button");
+  if (first) first.focus({ preventScroll: true });
+  if (onMount) onMount(sw.querySelector(".sheet"));
+}
+function closeSheet() { $("#sheetRoot").innerHTML = ""; renderAll(); }
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#sw") && !$("#pinForm")) closeSheet(); });
+const field = (label, inner) => `<label class="f"><span>${esc(label)}</span>${inner}</label>`;
+const selOpts = (group, val) => Object.keys(OPT[group]).map(k => `<option value="${k}" ${val === k ? "selected" : ""}>${esc(o(group, k))}</option>`).join("");
+function delButton() { return `<button type="button" class="btn small" data-del="1" style="background:var(--pink)">${esc(t("del"))}</button>`; }
+function armDelete(root, fn) {
+  const b = root.querySelector("[data-del]"); if (!b) return;
+  let armed = false;
+  b.addEventListener("click", () => { if (!armed) { armed = true; b.textContent = t("confirmDel"); return; } fn(); closeSheet(); });
+}
+
+function openQuest(id) {
+  const q = activeQuests().find(x => x.id === id); if (!q) return;
+  const a = AREA[q.area];
+  openSheet(`
+    <div class="sheet-h"><div><div class="small muted">${a.icon} ${esc(a.t[L()])}</div><h2>${esc(q.title)}</h2>${q.alt ? `<div class="alt">${esc(q.alt)}</div>` : ""}</div><button class="roundbtn" data-close="1" aria-label="${esc(t("close"))}">✕</button></div>
+    <div class="stack">
+      <div class="row"><span class="tag who">${esc(whoLabel(q.who))}</span><span class="tag xp">+${q.xp} XP</span>${isLate(q) ? `<span class="tag late">${esc(t("late"))}</span>` : ""}${q.tight ? `<span class="tag tight">${esc(t("tight"))}</span>` : ""}</div>
+      ${q.custom ? field(t("title"), `<input id="cqTitle" value="${esc(q.title)}" ${S.ro ? "disabled" : ""}>`) : `<div class="desc">${esc(q.desc)}</div>`}
+      ${q.link ? `<div><a class="btn small mint" href="${esc(q.link)}" target="_blank" rel="noopener">↗ ${esc(t("openLink"))}</a></div>` : ""}
+      <div class="grid2">
+        ${field(t("status"), statusSelect(q).replace('class="st"', 'class="st" id="qStatus" style="max-width:none;width:100%"'))}
+        ${field(t("due") + (q.over || q.custom ? "" : " (" + t("dueAuto") + ")"), `<input type="date" id="qDue" value="${iso(q.due)}" ${S.ro ? "disabled" : ""}>`)}
+      </div>
+      ${q.over && !q.custom && !S.ro ? `<div><button class="btn small" id="qDueReset">${esc(t("dueReset"))} (${fmtDate(q.auto)})</button></div>` : ""}
+      ${field(t("notes"), `<textarea id="qNote" placeholder="${esc(t("notesPh"))}" ${S.ro ? "disabled" : ""}>${esc(q.note)}</textarea>`)}
+      <div class="row" style="justify-content:space-between">${q.custom && !S.ro ? delButton() : "<span></span>"}<button class="btn pink" data-close="1">${esc(t("close"))}</button></div>
+    </div>`, root => {
+    const cur = () => activeQuests().find(x => x.id === id) || q;
+    const persist = patch => {
+      const c = cur();
+      if (q.custom) { const base = Object.assign({}, S.custom[id], patch); saveDoc("custom", id, base); }
+      else { const base = Object.assign({ s: c.s, note: c.note }, S.prog[id] || {}, patch); saveDoc("prog", id, base); }
+    };
+    root.querySelector("#qStatus").addEventListener("change", e => { const prev = cur().s, lv = stats().lvIdx; e.target.dataset.v = e.target.value; persist({ s: e.target.value }); if (e.target.value === "done" && prev !== "done") celebrate(q.xp, lv); });
+    root.querySelector("#qDue").addEventListener("change", e => { if (e.target.value) persist({ due: e.target.value }); });
+    root.querySelector("#qNote").addEventListener("change", e => persist({ note: e.target.value }));
+    const ct = root.querySelector("#cqTitle"); if (ct) ct.addEventListener("change", e => persist({ t: e.target.value }));
+    const rs = root.querySelector("#qDueReset"); if (rs) rs.addEventListener("click", () => { const b = Object.assign({}, S.prog[id]); delete b.due; saveDoc("prog", id, b); closeSheet(); });
+    armDelete(root, () => saveDoc("custom", id, null));
+  });
+}
+function openAddQuest(area) {
+  openSheet(`<div class="sheet-h"><h2>+ ${esc(t("addQuest"))}</h2><button class="roundbtn" data-close="1" aria-label="${esc(t("close"))}">✕</button></div>
+    <form class="form" id="fq">
+      ${field(t("title"), `<input id="nqT" required maxlength="140">`)}
+      <div class="grid2">${field(t("area"), `<select id="nqA">${DATA.areas.map(a => `<option value="${a.id}" ${a.id === area ? "selected" : ""}>${esc(a.t[L()])}</option>`).join("")}</select>`)}
+      ${field(t("due"), `<input type="date" id="nqD" required value="${iso(addDays(today0(), 30))}">`)}</div>
+      <div class="row" style="justify-content:flex-end"><button type="button" class="btn" data-close="1">${esc(t("cancel"))}</button><button class="btn pink">${esc(t("save"))}</button></div>
+    </form>`, root => {
+    root.querySelector("#fq").addEventListener("submit", e => { e.preventDefault(); saveDoc("custom", newId(), { t: root.querySelector("#nqT").value.trim(), a: root.querySelector("#nqA").value, due: root.querySelector("#nqD").value, s: "todo", note: "" }); closeSheet(); });
+  });
+}
+function openItem(id) {
+  const b = id ? S.budget[id] : { cat: "venue", cur: S.cfg.cur || "IDR" };
+  openSheet(`<div class="sheet-h"><h2>${esc(id ? b.name : t("addItem"))}</h2><button class="roundbtn" data-close="1" aria-label="${esc(t("close"))}">✕</button></div>
+    <form class="form" id="fi"><fieldset class="form" ${S.ro ? "disabled" : ""}>
+      ${field(t("item"), `<input id="biN" required value="${esc(b.name || "")}">`)}
+      <div class="grid2">${field(t("category"), `<select id="biC">${selOpts("bcat", b.cat)}</select>`)}${field(t("currency"), `<select id="biCur">${["IDR", "KRW"].map(k => `<option ${b.cur === k ? "selected" : ""}>${k}</option>`).join("")}</select>`)}</div>
+      <div class="grid2">${field(t("amtPlan"), `<input id="biP" type="number" min="0" step="any" value="${esc(b.plan || "")}">`)}${field(t("amtActual"), `<input id="biA" type="number" min="0" step="any" value="${esc(b.actual || "")}">`)}${field(t("amtPaid"), `<input id="biPd" type="number" min="0" step="any" value="${esc(b.paid || "")}">`)}</div>
+      ${field(t("note"), `<input id="biNote" value="${esc(b.note || "")}">`)}
+      <div class="row" style="justify-content:space-between">${id ? delButton() : "<span></span>"}<span class="row"><button type="button" class="btn" data-close="1">${esc(t("cancel"))}</button><button class="btn gold">${esc(t("save"))}</button></span></div>
+    </fieldset></form>`, root => {
+    root.querySelector("#fi").addEventListener("submit", e => { e.preventDefault();
+      const v = s => root.querySelector(s).value;
+      saveDoc("budget", id || newId(), { name: v("#biN").trim(), cat: v("#biC"), cur: v("#biCur"), plan: +v("#biP") || 0, actual: +v("#biA") || 0, paid: +v("#biPd") || 0, note: v("#biNote") });
+      closeSheet(); });
+    armDelete(root, () => saveDoc("budget", id, null));
+  });
+}
+function openGuest(id) {
+  const g = id ? S.guests[id] : { side: "both", group: "family", country: "ID", pax: 1, events: [], rsvp: "wait" };
+  openSheet(`<div class="sheet-h"><h2>${esc(id ? g.name : t("addGuest"))}</h2><button class="roundbtn" data-close="1" aria-label="${esc(t("close"))}">✕</button></div>
+    <form class="form" id="fg"><fieldset class="form" ${S.ro ? "disabled" : ""}>
+      ${field(t("name"), `<input id="gN" required value="${esc(g.name || "")}">`)}
+      <div class="grid2">${field(t("side"), `<select id="gS">${selOpts("side", g.side)}</select>`)}${field(t("group"), `<select id="gG">${selOpts("group", g.group)}</select>`)}
+      ${field(t("country"), `<select id="gC">${["ID", "KR", "OT"].map(k => `<option value="${k}" ${g.country === k ? "selected" : ""}>${esc(o("nat", k))}</option>`).join("")}</select>`)}${field(t("pax"), `<input id="gP" type="number" min="1" step="1" value="${esc(g.pax || 1)}">`)}</div>
+      <div class="f"><span>${esc(t("events"))}</span><div class="checks">${Object.keys(OPT.event).map(k => `<label><input type="checkbox" value="${k}" class="gE" ${(g.events || []).includes(k) ? "checked" : ""}> ${esc(o("event", k))}</label>`).join("")}</div></div>
+      <div class="grid2">${field(t("rsvp"), `<select id="gR">${["wait", "yes", "no"].map(k => `<option value="${k}" ${(g.rsvp || "wait") === k ? "selected" : ""}>${esc(t("rs_" + k))}</option>`).join("")}</select>`)}${field(t("phone"), `<input id="gPh" value="${esc(g.phone || "")}">`)}</div>
+      <div class="checks"><label><input type="checkbox" id="gI" ${g.invited ? "checked" : ""}> ${esc(t("invited"))}</label></div>
+      ${field(t("note"), `<input id="gNote" value="${esc(g.note || "")}">`)}
+      <div class="row" style="justify-content:space-between">${id ? delButton() : "<span></span>"}<span class="row"><button type="button" class="btn" data-close="1">${esc(t("cancel"))}</button><button class="btn mint">${esc(t("save"))}</button></span></div>
+    </fieldset></form>`, root => {
+    root.querySelector("#fg").addEventListener("submit", e => { e.preventDefault();
+      const v = s => root.querySelector(s).value;
+      saveDoc("guests", id || newId(), { name: v("#gN").trim(), side: v("#gS"), group: v("#gG"), country: v("#gC"), pax: Math.max(1, +v("#gP") || 1),
+        events: [...root.querySelectorAll(".gE:checked")].map(x => x.value), rsvp: v("#gR"), phone: v("#gPh"), invited: root.querySelector("#gI").checked, note: v("#gNote") });
+      closeSheet(); });
+    armDelete(root, () => saveDoc("guests", id, null));
+  });
+}
+function openVendor(id) {
+  const v0 = id ? S.vendors[id] : { cat: "venue", status: "research", cur: S.cfg.cur || "IDR", rating: 0 };
+  openSheet(`<div class="sheet-h"><h2>${esc(id ? v0.name : t("addVendor"))}</h2><button class="roundbtn" data-close="1" aria-label="${esc(t("close"))}">✕</button></div>
+    <form class="form" id="fv"><fieldset class="form" ${S.ro ? "disabled" : ""}>
+      ${field(t("vname"), `<input id="vN" required value="${esc(v0.name || "")}">`)}
+      <div class="grid2">${field(t("category"), `<select id="vC">${selOpts("vcat", v0.cat)}</select>`)}${field(t("vstatus"), `<select id="vS">${selOpts("vstat", v0.status)}</select>`)}</div>
+      <div class="grid2">${field(t("contact"), `<input id="vP" value="${esc(v0.contact || "")}">`)}${field(t("phone"), `<input id="vPh" inputmode="tel" value="${esc(v0.phone || "")}">`)}${field(t("email"), `<input id="vE" value="${esc(v0.email || "")}">`)}</div>
+      <div class="grid2">${field(t("price"), `<input id="vPr" type="number" min="0" step="any" value="${esc(v0.price || "")}">`)}${field(t("currency"), `<select id="vCur">${["IDR", "KRW"].map(k => `<option ${v0.cur === k ? "selected" : ""}>${k}</option>`).join("")}</select>`)}${field(t("payDue"), `<input id="vD" type="date" value="${esc(v0.payDue || "")}">`)}</div>
+      ${field(t("rating"), `<select id="vR">${[0, 1, 2, 3, 4, 5].map(n => `<option value="${n}" ${(+v0.rating || 0) === n ? "selected" : ""}>${n ? "★".repeat(n) : "—"}</option>`).join("")}</select>`)}
+      ${field(t("note"), `<textarea id="vNote">${esc(v0.note || "")}</textarea>`)}
+      <div class="row" style="justify-content:space-between">${id ? delButton() : "<span></span>"}<span class="row"><button type="button" class="btn" data-close="1">${esc(t("cancel"))}</button><button class="btn pink">${esc(t("save"))}</button></span></div>
+    </fieldset></form>`, root => {
+    root.querySelector("#fv").addEventListener("submit", e => { e.preventDefault();
+      const v = s => root.querySelector(s).value;
+      saveDoc("vendors", id || newId(), { name: v("#vN").trim(), cat: v("#vC"), status: v("#vS"), contact: v("#vP"), phone: v("#vPh"), email: v("#vE"), price: +v("#vPr") || 0, cur: v("#vCur"), payDue: v("#vD"), rating: +v("#vR") || 0, note: v("#vNote") });
+      closeSheet(); });
+    armDelete(root, () => saveDoc("vendors", id, null));
+  });
+}
+
+/* ---------- feedback ---------- */
+let toastTimer;
+function toast(msg) { $("#toastRoot").innerHTML = `<div class="toast">${esc(msg)}</div>`; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("#toastRoot").innerHTML = ""; }, 2200); }
+function celebrate(xp, before) {
+  toast("+" + xp + " " + t("xpGain"));
+  const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+  if (!reduce) for (let i = 0; i < 22; i++) {
+    const p = document.createElement("span"); p.className = "petal";
+    p.style.left = Math.random() * 100 + "vw"; p.style.setProperty("--dx", (Math.random() * 120 - 60) + "px");
+    p.style.animationDuration = (2.2 + Math.random() * 1.8) + "s"; p.style.animationDelay = (Math.random() * .5) + "s";
+    document.body.appendChild(p); setTimeout(() => p.remove(), 4800);
+  }
+  setTimeout(() => { const c = $("#cats"); if (c) { c.classList.remove("cheer"); void c.offsetWidth; c.classList.add("cheer"); } const after = stats().lvIdx; if (after > before) toast(t("lvUp") + " " + t("lv") + "." + (after + 1) + " " + LEVELS[after][L()]); }, 60);
+}
+
+/* ---------- events ---------- */
+function go(tab) { S.tab = tab; S.area = null; try { history.replaceState(null, "", "#" + tab); } catch (e) {} renderAll(); window.scrollTo(0, 0); }
+document.addEventListener("click", e => {
+  const el = e.target.closest("[data-tab],[data-open],[data-area],[data-back],[data-filter],[data-addq],[data-additem],[data-edititem],[data-addguest],[data-editguest],[data-gside],[data-addvendor],[data-editvendor],[data-copy],[data-months],#langBtn,#syncBtn");
+  if (!el || el.closest("#sw")) return;
+  const d = el.dataset;
+  if (d.tab) go(d.tab);
+  else if (d.open) openQuest(d.open);
+  else if (d.area) { S.area = d.area; renderAll(); window.scrollTo(0, 0); }
+  else if (d.back) { S.area = null; renderAll(); }
+  else if (d.filter) { S.filter = d.filter; renderAll(); }
+  else if (d.addq) openAddQuest(d.addq);
+  else if (d.additem) openItem(null);
+  else if (d.edititem) openItem(d.edititem);
+  else if (d.addguest) openGuest(null);
+  else if (d.editguest) openGuest(d.editguest);
+  else if (d.gside) { S.gside = d.gside; renderAll(); }
+  else if (d.addvendor) openVendor(null);
+  else if (d.editvendor) openVendor(d.editvendor);
+  else if (d.copy) { const v = d.copy; try { navigator.clipboard.writeText(v).then(() => toast(t("copied")), () => {}); } catch (err) {} }
+  else if (d.months) { const s = parseD(S.cfg.start) || today0(); S.cfg.wedding = iso(addMonths(s, +d.months)); saveCfg(); renderAll(); }
+  else if (el.id === "langBtn") { setLang(S.lang === "id" ? "ko" : "id"); }
+  else if (el.id === "syncBtn") { toast(t(S.mode === "shared" ? "sync_shared" : S.mode === "local" ? "sync_local" : S.mode === "ro" ? "sync_ro" : "sync_wait")); }
+});
+function setLang(l) { S.lang = l; try { localStorage.setItem("wq-lang", l); } catch (e) {} document.documentElement.lang = l; renderAll(); }
+document.addEventListener("change", e => {
+  const el = e.target;
+  if (el.closest("#sw")) return;
+  if (el.classList.contains("st") && el.dataset.q) {
+    const id = el.dataset.q, q = activeQuests().find(x => x.id === id); if (!q) return;
+    const prev = q.s, lv = stats().lvIdx; el.dataset.v = el.value;
+    if (q.custom) saveDoc("custom", id, Object.assign({}, S.custom[id], { s: el.value }));
+    else saveDoc("prog", id, Object.assign({ s: q.s, note: q.note }, S.prog[id] || {}, { s: el.value }));
+    renderAll();
+    if (el.value === "done" && prev !== "done") celebrate(q.xp, lv);
+    return;
+  }
+  if (el.dataset.lang) { setLang(el.value); return; }
+  if (el.dataset.adat) { S.cfg.adat = [...document.querySelectorAll("[data-adat]:checked")].map(x => x.value); saveCfg(); renderAll(); return; }
+  if (el.dataset.cur) { S.cfg.cur = el.value; saveCfg(); renderAll(); return; }
+  if (el.id === "rateIn") { S.cfg.rate = Math.max(0, +el.value || 0); saveCfg(); setTimeout(renderAll, 0); return; }
+  if (el.dataset.cfg) {
+    const k = el.dataset.cfg;
+    S.cfg[k] = k === "budget" ? (+el.value || 0) : el.value;
+    // a text field fires change while focus is moving to the next field; render after focus settles so that field survives
+    saveCfg(); setTimeout(renderAll, 0);
+  }
+});
+document.addEventListener("input", e => { if (e.target.id === "gSearch") { S.gq = e.target.value; const pos = e.target.selectionStart; pendingRender = false; renderView(); const n = $("#gSearch"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (err) {} } } });
+
+/* ---------- boot ---------- */
+(function boot() {
+  const h = (location.hash || "").slice(1);
+  if (["quest", "gold", "guests", "vendors", "setup"].includes(h)) S.tab = h;
+  document.documentElement.lang = S.lang;
+  renderAll();
+  connect();
+})();
+</script>
+</body>
+</html>

@@ -49,7 +49,7 @@ a { color: var(--purple-2); }
 .sync { position: relative; }
 .sync::after { content: ""; position: absolute; right: -2px; top: -2px; width: 12px; height: 12px; border-radius: 50%; border: 2px solid var(--line); background: var(--gold); }
 .sync[data-s="shared"]::after { background: var(--ok); }
-.sync[data-s="local"]::after, .sync[data-s="ro"]::after { background: var(--red); }
+.sync[data-s="local"]::after, .sync[data-s="ro"]::after, .sync[data-s="off"]::after { background: var(--red); }
 
 /* Panels & buttons */
 .panel { background: var(--cream); border: 3px solid var(--line); border-radius: var(--r-lg); box-shadow: var(--press); padding: 14px; }
@@ -233,7 +233,8 @@ const TX = {
     notesPh: "Nama petugas, nomor antrian, biaya, link…", openLink: "Buka situs resmi", close: "Tutup", save: "Simpan", del: "Hapus", cancel: "Batal",
     confirmDel: "Yakin hapus? Tekan lagi untuk konfirmasi.", title: "Judul", area: "Area", emptyArea: "Belum ada quest di area ini untuk pilihan kalian.",
     setupTitle: "Mulai petualangan!", setupBody: "Isi nama, tanggal, negara, dan agama kalian di menu Atur. Quest dan deadline langsung menyesuaikan.", setupGo: "Ke menu Atur",
-    sync_shared: "Tersinkron: semua perubahan langsung terlihat di perangkat pasangan.", sync_local: "Mode lokal: data hanya tersimpan di perangkat ini. Buka dari link artifact di claude.ai supaya tersinkron.",
+    sync_shared: "Tersinkron: semua perubahan langsung terlihat di perangkat pasangan.", sync_local: "Mode lokal: data hanya tersimpan di perangkat ini.",
+    sync_off: "Tidak bisa terhubung ke server. Perubahan akan dicoba lagi otomatis.", pinTitle: "Masukkan PIN", pinBody: "Wedding Quest ini dikunci dengan PIN. Minta PIN-nya ke pemilik.", pinWrong: "PIN salah. Coba lagi.", pinGo: "Masuk",
     sync_ro: "Mode lihat saja: minta pemilik mengundang kamu sebagai Editor supaya bisa mengubah data.", sync_wait: "Menyambungkan ke penyimpanan bersama…", sync_slow: "Penyimpanan bersama belum tersambung. Data yang tampil mungkin belum terbaru.",
     saveFail: "Gagal menyimpan. Coba lagi sebentar.",
     xpGain: "XP", lvUp: "Naik level!",
@@ -248,7 +249,7 @@ const TX = {
     vstatus: "Status", rating: "Rating", copy: "Salin", copied: "Disalin", noVendors: "Belum ada vendor. Simpan kontak vendor yang lagi kalian lirik di sini.",
     setup_title: "Atur Petualangan", bride: "Pengantin wanita", groom: "Pengantin pria", nat: "Kewarganegaraan", rel: "Agama", loc: "Menikah di", regFirst: "Pencatatan resmi pertama di",
     date2: "Tanggal acara di negara kedua", start: "Mulai persiapan", wedding: "Tanggal pernikahan (Hari H)", quick: "Atau pilih durasi dari tanggal mulai",
-    months: "bulan", live: "Tinggal setelah menikah", lang: "Bahasa", totalBudget: "Budget total", rulesNote: "Quest dokumen otomatis berubah sesuai pilihan di atas.",
+    months: "bulan", adat: "Adat yang dipakai", adat_cn: "Tionghoa", adat_kr: "Korea", live: "Tinggal setelah menikah", lang: "Bahasa", totalBudget: "Budget total", rulesNote: "Quest dokumen otomatis berubah sesuai pilihan di atas.",
     aboutTitle: "Tentang syarat dokumen", about: "Syarat dirangkum dari peraturan dan sumber publik per November 2026 (PMA 30/2024, SEMA 2/2023, aturan apostille, info F-6). Syarat bisa beda per kota dan sering berubah, jadi selalu konfirmasi ke KUA / Dukcapil, 구청, dan kedutaan sebelum mengurus.",
     sources: "Sumber", applies: "quest aktif untuk pilihan kalian", optional: "Belum dipilih"
   },
@@ -262,7 +263,8 @@ const TX = {
     notesPh: "담당자 이름, 대기 번호, 비용, 링크…", openLink: "공식 사이트 열기", close: "닫기", save: "저장", del: "삭제", cancel: "취소",
     confirmDel: "정말 삭제할까요? 한 번 더 누르면 삭제돼요.", title: "제목", area: "구역", emptyArea: "선택한 조건에 해당하는 퀘스트가 없어요.",
     setupTitle: "모험을 시작해요!", setupBody: "'설정'에서 이름, 날짜, 국적, 종교를 입력하면 퀘스트와 마감일이 자동으로 맞춰져요.", setupGo: "설정으로 가기",
-    sync_shared: "동기화됨: 변경 내용이 상대방 기기에도 바로 보여요.", sync_local: "로컬 모드: 이 기기에만 저장돼요. claude.ai의 아티팩트 링크로 열면 동기화돼요.",
+    sync_shared: "동기화됨: 변경 내용이 상대방 기기에도 바로 보여요.", sync_local: "로컬 모드: 이 기기에만 저장돼요.",
+    sync_off: "서버에 연결할 수 없어요. 자동으로 다시 시도해요.", pinTitle: "PIN 입력", pinBody: "이 Wedding Quest는 PIN으로 잠겨 있어요. 소유자에게 PIN을 물어보세요.", pinWrong: "PIN이 틀렸어요. 다시 입력하세요.", pinGo: "들어가기",
     sync_ro: "보기 전용: 수정하려면 소유자에게 편집자로 초대해 달라고 하세요.", sync_wait: "공유 저장소에 연결 중…", sync_slow: "공유 저장소에 아직 연결되지 않았어요. 최신 데이터가 아닐 수 있어요.",
     saveFail: "저장하지 못했어요. 잠시 후 다시 시도하세요.",
     xpGain: "XP", lvUp: "레벨 업!",
@@ -277,7 +279,7 @@ const TX = {
     vstatus: "상태", rating: "평점", copy: "복사", copied: "복사됨", noVendors: "아직 업체가 없어요. 알아보는 업체 연락처를 여기에 저장하세요.",
     setup_title: "모험 설정", bride: "신부", groom: "신랑", nat: "국적", rel: "종교", loc: "결혼식 장소", regFirst: "법적 혼인 등록을 먼저 하는 나라",
     date2: "두 번째 나라 예식 날짜", start: "준비 시작일", wedding: "결혼식 날짜 (D-Day)", quick: "또는 시작일부터 기간 선택",
-    months: "개월", live: "결혼 후 거주지", lang: "언어", totalBudget: "총예산", rulesNote: "서류 퀘스트는 위의 선택에 따라 자동으로 바뀌어요.",
+    months: "개월", adat: "전통 예식", adat_cn: "중국계 전통", adat_kr: "한국 전통", live: "결혼 후 거주지", lang: "언어", totalBudget: "총예산", rulesNote: "서류 퀘스트는 위의 선택에 따라 자동으로 바뀌어요.",
     aboutTitle: "서류 요건 안내", about: "2026년 11월 기준 법령과 공개 자료(종교부령 30/2024, 대법원 회람 2/2023, 아포스티유, F-6 안내)를 정리했어요. 지역마다 다르고 자주 바뀌니 꼭 KUA·Dukcapil, 구청, 대사관에 먼저 확인하세요.",
     sources: "출처", applies: "개의 퀘스트가 활성화됨", optional: "미선택"
   }
@@ -317,7 +319,7 @@ const diffDays = (a, b) => Math.round((b - a) / 86400000);
 
 function defaultCfg() {
   const t = today0();
-  return { brideName: "", groomName: "", brideNat: "KR", groomNat: "ID", brideRel: "", groomRel: "", loc: "ID", regFirst: "ID", date2: "",
+  return { brideName: "", groomName: "", brideNat: "KR", groomNat: "ID", brideRel: "buddha", groomRel: "buddha", adat: ["cn", "kr"], loc: "ID", regFirst: "ID", date2: "",
     start: iso(t), wedding: iso(addMonths(t, 12)), live: "TBD", budget: 0, budgetCur: "IDR", cur: "IDR", rate: 11.5 };
 }
 const S = {
@@ -355,7 +357,8 @@ function flags(c) {
   f.cerID = c.loc !== "KR"; f.cerKR = c.loc !== "ID";
   const relSet = !!(r[0] && r[1]);
   f.mixedRel = relSet && r[0] !== r[1]; f.noRel = r.includes("none");
-  f.bothIslam = r[0] === "islam" && r[1] === "islam"; f.anyIslam = r.includes("islam");
+  f.bothIslam = r[0] === "islam" && r[1] === "islam"; f.anyIslam = r.includes("islam"); f.anyBuddha = r.includes("buddha");
+  const ad = Array.isArray(c.adat) ? c.adat : []; f.adatCN = ad.includes("cn"); f.adatKR = ad.includes("kr");
   f.kua = f.regID && f.bothIslam;
   f.dukcapil = f.regID && relSet && !f.bothIslam && !f.mixedRel && !f.noRel;
   const one = relSet && !f.mixedRel ? r[0] : "";
@@ -424,6 +427,7 @@ function localLoad() {
 function localSave() { try { const d = { cfg: S.cfgSaved ? S.cfg : null }; COLS.forEach(k => d[k] = S[k]); localStorage.setItem("wq-local", JSON.stringify(d)); } catch (e) {} }
 function write(path, data) {
   if (S.ro) return Promise.resolve();
+  if (GAS) return gasWrite(path, data);
   if (!DB) { localSave(); return Promise.resolve(); }
   const run = () => (data === null ? DB.doc(path).delete() : DB.doc(path).set(data));
   chains[path] = (chains[path] || Promise.resolve()).then(run).catch(e => {
@@ -436,7 +440,59 @@ function saveCfg() { S.cfgSaved = true; return write("config/main", Object.assig
 function saveDoc(col, id, data) { if (data === null) delete S[col][id]; else S[col][id] = data; return write(col + "/" + id, data); }
 const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 7);
 
+/* Google Apps Script backend: the page is served by the script, data lives in the owner's Google Sheet. */
+let GAS = false, gasRev = 0, gasPending = 0, gasTimer = null;
+const gasCall = (fn, ...args) => new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+const getPin = () => { try { return localStorage.getItem("wq-pin") || ""; } catch (e) { return ""; } };
+function gasApply(r) {
+  if (!r || r.same) return;
+  gasRev = r.rev;
+  const next = { prog: {}, custom: {}, budget: {}, guests: {}, vendors: {} };
+  let cfg = null;
+  r.docs.forEach(([col, id, json]) => { let v; try { v = JSON.parse(json); } catch (e) { return; } if (col === "config" && id === "main") cfg = v; else if (next[col]) next[col][id] = v; });
+  if (cfg) { S.cfg = Object.assign(defaultCfg(), cfg); S.cfgSaved = true; }
+  COLS.forEach(k => { S[k] = next[k]; });
+}
+async function gasPull(force) {
+  if (gasPending) return;
+  try {
+    const r = await gasCall("getAll", getPin(), force ? 0 : gasRev);
+    if (gasPending) return;
+    const was = S.mode; S.mode = "shared";
+    if (r && !r.same) { gasApply(r); renderAll(); } else if (was !== "shared") renderAll();
+  } catch (e) {
+    if (String(e && e.message || e).includes("PIN")) { askPin(true); return; }
+    if (S.mode !== "off") { S.mode = "off"; renderAll(); }
+  }
+}
+function gasWrite(path, data) {
+  const [col, id] = path.split("/");
+  gasPending++;
+  chains[path] = (chains[path] || Promise.resolve()).then(() => gasCall("put", getPin(), col, id, data === null ? "" : JSON.stringify(data)))
+    .then(() => { if (S.mode === "off") { S.mode = "shared"; renderAll(); } })
+    .catch(e => { if (String(e && e.message || e).includes("PIN")) askPin(true); else { S.mode = "off"; renderAll(); toast(t("saveFail")); } })
+    .finally(() => { gasPending--; if (!gasPending) setTimeout(() => gasPull(false), 400); });
+  return chains[path];
+}
+function askPin(wrong) {
+  if ($("#pinForm")) return;
+  openSheet(`<div class="sheet-h"><h2>${esc(t("pinTitle"))}</h2></div>
+    <form class="form" id="pinForm"><p style="margin:0">${esc(t("pinBody"))}</p>${wrong && getPin() ? `<p class="tag late" style="justify-self:start">${esc(t("pinWrong"))}</p>` : ""}
+      ${field("PIN", `<input id="pinIn" inputmode="numeric" autocomplete="off" required>`)}
+      <div class="row" style="justify-content:flex-end"><button class="btn pink">${esc(t("pinGo"))}</button></div></form>`);
+  const sw = $("#sw"); sw.replaceWith(sw.cloneNode(true)); // drop the backdrop-close handler: the PIN screen must stay
+  $("#pinForm").addEventListener("submit", e => { e.preventDefault(); try { localStorage.setItem("wq-pin", $("#pinIn").value.trim()); } catch (err) {} $("#sheetRoot").innerHTML = ""; gasPull(true); });
+  $("#pinIn").focus();
+}
+function connectGAS() {
+  GAS = true; S.mode = "wait"; renderAll();
+  gasPull(true);
+  clearInterval(gasTimer); gasTimer = setInterval(() => { if (!document.hidden) gasPull(false); }, 12000);
+  document.addEventListener("visibilitychange", () => { if (!document.hidden) gasPull(false); });
+}
+
 async function connect() {
+  if (typeof google !== "undefined" && google.script && google.script.run) { connectGAS(); return; }
   let db = null;
   try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
   if (!db) { S.mode = "local"; localLoad(); renderAll(); return; }
@@ -569,7 +625,7 @@ function renderView() {
 }
 function syncBanner() {
   if (S.mode === "shared" && !S.slow) return "";
-  const k = S.mode === "wait" ? "sync_wait" : S.mode === "local" ? "sync_local" : S.mode === "ro" ? "sync_ro" : "sync_slow";
+  const k = S.mode === "wait" ? "sync_wait" : S.mode === "local" ? "sync_local" : S.mode === "ro" ? "sync_ro" : S.mode === "off" ? "sync_off" : "sync_slow";
   return `<div class="banner">${esc(t(S.slow && S.mode === "shared" ? "sync_slow" : k))}</div>`;
 }
 
@@ -741,6 +797,7 @@ function viewSetup() {
       <div class="panel stack">
         <div class="f"><span>${esc(t("loc"))}</span>${seg("loc", "loc", c.loc)}</div>
         ${c.loc === "BOTH" ? `<div class="f"><span>${esc(t("regFirst"))}</span><div class="seg">${["ID", "KR"].map(k => `<label><input type="radio" name="regFirst" value="${k}" ${c.regFirst === k ? "checked" : ""} data-cfg="regFirst"><span>${esc(o("loc", k))}</span></label>`).join("")}</div></div>` : ""}
+        <div class="f"><span>${esc(t("adat"))}</span><div class="seg">${["cn", "kr"].map(k => `<label><input type="checkbox" value="${k}" data-adat="1" ${(c.adat || []).includes(k) ? "checked" : ""}><span>${esc(t("adat_" + k))}</span></label>`).join("")}</div></div>
         <div class="f"><span>${esc(t("live"))}</span>${seg("live", "live", c.live)}</div>
         <p class="small muted" style="margin:0">${esc(t("rulesNote"))} <b>${n}</b> ${esc(t("applies"))}.</p>
       </div>
@@ -779,7 +836,7 @@ function openSheet(html, onMount) {
   if (onMount) onMount(sw.querySelector(".sheet"));
 }
 function closeSheet() { $("#sheetRoot").innerHTML = ""; renderAll(); }
-document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#sw")) closeSheet(); });
+document.addEventListener("keydown", e => { if (e.key === "Escape" && $("#sw") && !$("#pinForm")) closeSheet(); });
 const field = (label, inner) => `<label class="f"><span>${esc(label)}</span>${inner}</label>`;
 const selOpts = (group, val) => Object.keys(OPT[group]).map(k => `<option value="${k}" ${val === k ? "selected" : ""}>${esc(o(group, k))}</option>`).join("");
 function delButton() { return `<button type="button" class="btn small" data-del="1" style="background:var(--pink)">${esc(t("del"))}</button>`; }
@@ -942,12 +999,14 @@ document.addEventListener("change", e => {
     return;
   }
   if (el.dataset.lang) { setLang(el.value); return; }
+  if (el.dataset.adat) { S.cfg.adat = [...document.querySelectorAll("[data-adat]:checked")].map(x => x.value); saveCfg(); renderAll(); return; }
   if (el.dataset.cur) { S.cfg.cur = el.value; saveCfg(); renderAll(); return; }
-  if (el.id === "rateIn") { S.cfg.rate = Math.max(0, +el.value || 0); saveCfg(); renderAll(); return; }
+  if (el.id === "rateIn") { S.cfg.rate = Math.max(0, +el.value || 0); saveCfg(); setTimeout(renderAll, 0); return; }
   if (el.dataset.cfg) {
     const k = el.dataset.cfg;
     S.cfg[k] = k === "budget" ? (+el.value || 0) : el.value;
-    saveCfg(); renderAll();
+    // a text field fires change while focus is moving to the next field; render after focus settles so that field survives
+    saveCfg(); setTimeout(renderAll, 0);
   }
 });
 document.addEventListener("input", e => { if (e.target.id === "gSearch") { S.gq = e.target.value; const pos = e.target.selectionStart; pendingRender = false; renderView(); const n = $("#gSearch"); if (n) { n.focus(); try { n.setSelectionRange(pos, pos); } catch (err) {} } } });

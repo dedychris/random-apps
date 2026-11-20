@@ -4,9 +4,12 @@ Wedding planner bergaya game untuk pasangan Indonesia–Korea (dan kombinasi lai
 
 - `quests.json`: sumber data quest (dua bahasa: ID/KO), lengkap dengan kondisi kapan quest berlaku
   (kewarganegaraan, lokasi nikah, agama, rencana tinggal) dan jarak deadline ideal dari Hari H.
-- `src/template.html` + `build.py` → `wedding-quest.html` (versi game, dipublikasikan sebagai Claude Artifact
-  dengan penyimpanan bersama).
-- `build_xlsx.py` → `Wedding-Quest.xlsx` (versi spreadsheet dengan aturan yang sama dalam bentuk formula).
+- `src/template.html` + `build.py` → versi game:
+  - `web/Index.html` + `web/Code.gs`: web app Google Apps Script (bisa dibuka tanpa akun, data di Google Sheet,
+    dikunci PIN). Cara pasang: `web/PANDUAN-DEPLOY.md`.
+  - `wedding-quest.html`: versi Claude Artifact.
+- `formal.json` + `build_xlsx.py` → `Rencana-Pernikahan.xlsx` (versi spreadsheet berbahasa formal, aturan sama
+  dalam bentuk formula).
 
 ```bash
 python3 wedding-quest/build.py
