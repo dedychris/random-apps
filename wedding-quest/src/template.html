@@ -96,6 +96,21 @@ a { color: var(--purple-2); }
 .lvpanel { display: block; width: 100%; text-align: left; cursor: pointer; }
 .lvpanel:active { transform: translateY(2px); box-shadow: 0 2px 0 var(--line); }
 button.pill { cursor: pointer; }
+.eyebrow { font-size: 11px; font-weight: 800; letter-spacing: .04em; text-transform: uppercase; color: var(--purple-2); }
+.qline { border: 3px solid var(--line); border-radius: var(--r-lg); background: var(--cream); box-shadow: var(--press); }
+.qline.done { background: #E3F4E5; }
+.qline > summary { list-style: none; cursor: pointer; display: grid; grid-template-columns: 46px minmax(0, 1fr) auto; gap: 10px; align-items: center; padding: 12px; }
+.qline > summary::-webkit-details-marker { display: none; }
+.qline > summary:focus-visible { outline: 3px solid var(--purple-2); border-radius: var(--r-lg); }
+.gicon { width: 46px; height: 46px; display: grid; place-items: center; font-size: 23px; border: 2px solid var(--line); border-radius: 50%; background: var(--paper); }
+.gmain { display: grid; gap: 3px; min-width: 0; }
+.gt { font-family: var(--f-display); font-size: 18px; line-height: 1.15; }
+.gbar { display: block; height: 9px; border: 2px solid var(--line); border-radius: 6px; background: var(--cream-2); overflow: hidden; }
+.gbar i { display: block; height: 100%; background: var(--ok); }
+.gside { display: grid; justify-items: end; gap: 4px; }
+.qline[open] > summary { border-bottom: 2px dashed var(--line); }
+.qline .subs { display: grid; gap: 8px; padding: 10px; }
+.qline .subs .q { box-shadow: 0 2px 0 var(--line); border-width: 2px; }
 .ladder { display: grid; gap: 6px; }
 .rung { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; gap: 8px; align-items: center; padding: 6px 10px; border: 2px solid var(--line); border-radius: 12px; background: var(--paper); font-size: 13px; }
 .rung b { font-family: var(--f-display); font-weight: 400; font-size: 15px; }
@@ -279,6 +294,7 @@ const TX = {
     history: "Riwayat Petualangan", seeHistory: "Lihat riwayat ›", ladder: "Tangga level", timeline: "Jejak quest", earlier: "Sebelumnya (tanpa tanggal)",
     lvReached: "Naik ke", noHistory: "Belum ada riwayat. Ubah status quest untuk mulai mencatat.", me: "Perangkat ini dipakai oleh", meNone: "Belum dipilih",
     meHint: "Dipakai untuk mencatat siapa yang mengubah status quest.", doneCount: "Quest selesai", needXp: "butuh",
+    mainQuest: "Quest utama", bonus: "Bonus", lineDone: "Quest utama selesai!", extraQ: "Quest tambahan", themes: "tema",
     wardrobe: "Lemari", fur: "Warna bulu", outfit: "Baju", hat: "Topi & hiasan kepala", glasses: "Kacamata", resetLook: "Kembalikan gaya awal", tapCat: "Ketuk kucing untuk ganti gaya"
   },
   ko: {
@@ -313,6 +329,7 @@ const TX = {
     history: "모험 기록", seeHistory: "기록 보기 ›", ladder: "레벨 단계", timeline: "퀘스트 기록", earlier: "이전 기록 (날짜 없음)",
     lvReached: "레벨 업:", noHistory: "아직 기록이 없어요. 퀘스트 상태를 바꾸면 기록돼요.", me: "이 기기 사용자", meNone: "선택 안 함",
     meHint: "누가 퀘스트 상태를 바꿨는지 기록할 때 사용돼요.", doneCount: "완료한 퀘스트", needXp: "필요",
+    mainQuest: "메인 퀘스트", bonus: "보너스", lineDone: "메인 퀘스트 완료!", extraQ: "추가 퀘스트", themes: "테마",
     wardrobe: "옷장", fur: "털 색", outfit: "옷", hat: "모자·머리 장식", glasses: "안경", resetLook: "기본 스타일로", tapCat: "고양이를 눌러 꾸며 보세요"
   }
 };
@@ -356,7 +373,7 @@ function defaultCfg() {
 }
 const S = {
   cfg: defaultCfg(), cfgSaved: false, prog: {}, custom: {}, budget: {}, guests: {}, vendors: {},
-  lang: "id", tab: "quest", area: null, filter: "prio", gq: "", gside: "all",
+  lang: "id", tab: "quest", area: null, gOpen: {}, filter: "prio", gq: "", gside: "all",
   mode: "wait", ro: false, slow: false
 };
 try { const l = localStorage.getItem("wq-lang"); if (l === "ko" || l === "id") S.lang = l; } catch (e) {}
@@ -378,6 +395,7 @@ function compileCond(src) {
 }
 DATA.quests.forEach(q => { q.fn = compileCond(q.c); });
 const AREA = Object.fromEntries(DATA.areas.map(a => [a.id, a]));
+const GROUP = Object.fromEntries(DATA.groups.map(g => [g.id, g]));
 
 function flags(c) {
   const n = [c.brideNat, c.groomNat], r = [c.brideRel, c.groomRel];
@@ -417,10 +435,10 @@ function activeQuests() {
     if (tight) due = start;
     const p = S.prog[q.id] || {};
     const ov = parseD(p.due);
-    return { id: q.id, area: q.a, who: q.w, xp: q.xp, title: q.t[L()], alt: q.t[1 - L()], desc: q.d[L()], link: q.l, due: ov || due, auto: due, over: !!ov, tight: tight && !ov, s: p.s || "todo", note: p.note || "", custom: false };
+    return { id: q.id, area: q.a, g: q.g, who: q.w, xp: q.xp, title: q.t[L()], alt: q.t[1 - L()], desc: q.d[L()], link: q.l, due: ov || due, auto: due, over: !!ov, tight: tight && !ov, s: p.s || "todo", note: p.note || "", custom: false };
   });
   Object.entries(S.custom).forEach(([id, cq]) => {
-    list.push({ id, area: cq.a || "plan", who: "both", xp: 20, title: cq.t || "…", alt: "", desc: "", due: parseD(cq.due) || w1, auto: null, over: true, tight: false, s: cq.s || "todo", note: cq.note || "", custom: true });
+    list.push({ id, area: cq.a || "plan", g: null, who: "both", xp: 20, title: cq.t || "…", alt: "", desc: "", due: parseD(cq.due) || w1, auto: null, over: true, tight: false, s: cq.s || "todo", note: cq.note || "", custom: true });
   });
   return list;
 }
@@ -674,13 +692,23 @@ function renderAll() {
   pendingRender = false;
   renderHud(); renderTabs(); renderView();
 }
+document.addEventListener("toggle", e => { const d = e.target; if (d.classList && d.classList.contains("qline")) S.gOpen[d.dataset.gid] = d.open; }, true);
 document.addEventListener("focusout", () => setTimeout(() => { if (pendingRender && !editingInView()) renderAll(); }, 0));
 
+/* main quests (themes): only those with at least one sub-quest that applies to this couple */
+function questLines(qs) {
+  return DATA.groups.map(g => {
+    const subs = qs.filter(q => q.g === g.id);
+    const done = subs.length > 0 && subs.every(q => q.s === "done");
+    return { g, subs, done, n: subs.filter(q => q.s === "done").length };
+  }).filter(x => x.subs.length);
+}
 function stats() {
-  const qs = activeQuests();
-  const total = qs.reduce((s, q) => s + q.xp, 0) || 1, earned = qs.filter(q => q.s === "done").reduce((s, q) => s + q.xp, 0);
+  const qs = activeQuests(), lines = questLines(qs);
+  const total = (qs.reduce((s, q) => s + q.xp, 0) + lines.reduce((s, x) => s + x.g.bonus, 0)) || 1;
+  const earned = qs.filter(q => q.s === "done").reduce((s, q) => s + q.xp, 0) + lines.filter(x => x.done).reduce((s, x) => s + x.g.bonus, 0);
   const lvIdx = Math.min(LEVELS.length - 1, Math.floor((earned / total) * LEVELS.length));
-  return { qs, total, earned, lvIdx };
+  return { qs, lines, total, earned, lvIdx };
 }
 function budgetTotals() {
   let plan = 0, act = 0, paid = 0;
@@ -717,11 +745,12 @@ function syncBanner() {
 function statusSelect(q) {
   return `<select class="st" data-q="${esc(q.id)}" data-v="${q.s}" aria-label="${esc(t("status"))}" ${S.ro ? "disabled" : ""}>${STATUSES.map(s => `<option value="${s}" ${q.s === s ? "selected" : ""}>${esc(t("st_" + s))}</option>`).join("")}</select>`;
 }
-function questCard(q) {
-  const a = AREA[q.area] || AREA.plan;
+function questCard(q, inLine) {
+  const a = AREA[q.area] || AREA.plan, g = GROUP[q.g];
   return `<div class="q ${q.s === "done" ? "is-done" : ""}">
-    <span class="em" aria-hidden="true">${a.icon}</span>
+    <span class="em" aria-hidden="true">${inLine || !g ? a.icon : g.icon}</span>
     <button class="main" data-open="${esc(q.id)}">
+      ${!inLine && g ? `<span class="eyebrow">${esc(g.t[L()])}</span>` : ""}
       <span class="qt">${esc(q.title)}</span>
       <span class="meta"><span class="due">${fmtDate(q.due)} · ${dLabel(q.due)}</span>
         ${isLate(q) ? `<span class="tag late">${esc(t("late"))}</span>` : ""}${q.tight && q.s !== "done" ? `<span class="tag tight">${esc(t("tight"))}</span>` : ""}
@@ -733,7 +762,7 @@ function questCard(q) {
 
 function viewHome() {
   const st = stats(), qs = st.qs;
-  const areas = DATA.areas.map(a => { const l = qs.filter(q => q.area === a.id); const d = l.filter(q => q.s === "done").length; return { a, n: l.length, d }; });
+  const areas = DATA.areas.map(a => { const l = qs.filter(q => q.area === a.id); const d = l.filter(q => q.s === "done").length; const ls = st.lines.filter(x => x.g.a === a.id); return { a, n: l.length, d, gn: ls.length, gd: ls.filter(x => x.done).length }; });
   const cur = areas.find(x => x.n && x.d < x.n) || areas[areas.length - 1];
   const pct = cur.n ? Math.round(cur.d / cur.n * 100) : 100;
   const upcoming = qs.filter(q => q.s !== "done").sort(byDue).slice(0, 3);
@@ -773,17 +802,29 @@ function viewHome() {
     <div class="sec-h"><h2>${esc(t("map"))}</h2></div>
     <div class="areas">${areas.map(x => `<button class="area ${x.n && x.d === x.n ? "done" : ""}" data-area="${x.a.id}">
       <span class="em" aria-hidden="true">${x.a.icon}</span><b>${esc(x.a.t[L()])}</b>
-      <span class="mini"><i style="width:${x.n ? Math.round(x.d / x.n * 100) : 0}%"></i></span><span class="cnt">${x.d}/${x.n}</span></button>`).join("")}</div>
+      <span class="mini"><i style="width:${x.n ? Math.round(x.d / x.n * 100) : 0}%"></i></span><span class="cnt">${x.gd}/${x.gn} ${esc(t("themes"))} · ${x.d}/${x.n} quest</span></button>`).join("")}</div>
     <div class="sec-h"><h2>${esc(t("badges"))}</h2></div>
     <div class="badges">${areas.map(x => `<span class="badge ${x.n && x.d === x.n ? "" : "locked"}" title="${esc(x.a.t[L()])}">${x.a.icon}</span>`).join("")}</div>
     <div class="sec-h"><h2>${esc(t("list"))}</h2></div>
     <div class="chips" role="group">${[["prio", t("f_prio")], ["late", t("f_late") + (lateN ? " · " + lateN : "")], ["30", t("f_30")], ["done", t("f_done")], ["all", t("f_all")]].map(([k, l]) => `<button class="chip" data-filter="${k}" aria-pressed="${S.filter === k}">${esc(l)}</button>`).join("")}</div>
-    <div class="qlist">${list.length ? list.map(questCard).join("") : `<div class="panel empty muted">${esc(t("emptyArea"))}</div>`}</div>`;
+    <div class="qlist">${list.length ? list.map(q => questCard(q)).join("") : `<div class="panel empty muted">${esc(t("emptyArea"))}</div>`}</div>`;
 }
 
+function lineCard(x) {
+  const open = S.gOpen[x.g.id] != null ? S.gOpen[x.g.id] : !x.done;
+  const pct = Math.round(x.n / x.subs.length * 100);
+  return `<details class="qline ${x.done ? "done" : ""}" data-gid="${x.g.id}" ${open ? "open" : ""}>
+    <summary><span class="gicon" aria-hidden="true">${x.g.icon}</span>
+      <span class="gmain"><span class="eyebrow">${esc(t("mainQuest"))}</span><span class="gt">${esc(x.g.t[L()])}</span>
+        <span class="gbar"><i style="width:${pct}%"></i></span></span>
+      <span class="gside"><span class="small muted">${x.n}/${x.subs.length}</span><span class="tag ${x.done ? "" : "xp"}" style="${x.done ? "background:var(--gold)" : ""}">${x.done ? "✓ " : ""}${esc(t("bonus"))} +${x.g.bonus}</span></span></summary>
+    <div class="subs">${x.subs.slice().sort(byDue).map(q => questCard(q, true)).join("")}</div>
+  </details>`;
+}
 function viewArea() {
   const a = AREA[S.area];
-  const qs = activeQuests().filter(q => q.area === a.id).sort(byDue);
+  const st = stats(), qs = st.qs.filter(q => q.area === a.id).sort(byDue);
+  const lines = st.lines.filter(x => x.g.a === a.id), extra = qs.filter(q => !q.g);
   const d = qs.filter(q => q.s === "done").length;
   return `
     <div class="row" style="justify-content:space-between"><button class="btn small" data-back="1">← ${esc(t("back"))}</button>
@@ -791,7 +832,7 @@ function viewArea() {
     <section class="stage"><div class="stage-top"><h2>${a.icon} ${esc(a.t[L()])}</h2><span class="small muted">${d}/${qs.length}</span></div>
       <p class="small" style="margin:0 0 8px">${esc(a.d[L()])}</p>
       <div class="bar"><i style="width:${qs.length ? Math.round(d / qs.length * 100) : 0}%"></i></div></section>
-    <div class="qlist">${qs.length ? qs.map(questCard).join("") : `<div class="panel empty muted">${esc(t("emptyArea"))}</div>`}</div>`;
+    <div class="qlist">${lines.length || extra.length ? lines.map(lineCard).join("") + (extra.length ? `<div class="sec-h"><h2>${esc(t("extraQ"))}</h2></div>` + extra.map(q => questCard(q, true)).join("") : "") : `<div class="panel empty muted">${esc(t("emptyArea"))}</div>`}</div>`;
 }
 
 /* gold */
@@ -1036,7 +1077,8 @@ function openVendor(id) {
 const whoAmI = () => { try { const v = localStorage.getItem("wq-me"); return v === "groom" || v === "bride" ? v : ""; } catch (e) { return ""; } };
 function setStatus(q, s) {
   if (S.ro || q.s === s) return;
-  const lv = stats().lvIdx, prev = q.s;
+  const before = stats(), lv = before.lvIdx, prev = q.s;
+  const lineWasDone = q.g && before.lines.some(x => x.g.id === q.g && x.done);
   const entry = { s, at: Date.now() }, me = whoAmI();
   if (me) entry.by = me;
   const base = q.custom ? Object.assign({}, S.custom[q.id]) : Object.assign({ s: q.s, note: q.note }, S.prog[q.id] || {});
@@ -1045,7 +1087,10 @@ function setStatus(q, s) {
   if (s === "done") base.doneAt = entry.at;
   saveDoc(q.custom ? "custom" : "prog", q.id, base);
   if (!$("#sw")) renderAll();
-  if (s === "done" && prev !== "done") celebrate(q.xp, lv);
+  if (s === "done" && prev !== "done") {
+    const line = q.g && stats().lines.find(x => x.g.id === q.g);
+    celebrate(q.xp, lv, line && line.done && !lineWasDone ? line.g : null);
+  }
 }
 function historyData() {
   const st = stats(), events = [];
@@ -1056,10 +1101,14 @@ function historyData() {
     if (q.s === "done" && !log.some(e => e.s === "done")) events.push({ at: 0, s: "done", q });
   });
   // level-ups, replayed from when each quest that is done now was completed
-  const done = st.qs.filter(q => q.s === "done").map(q => { const src = (q.custom ? S.custom[q.id] : S.prog[q.id]) || {}; return { q, at: +src.doneAt || 0 }; }).sort((a, b) => a.at - b.at);
+  const doneAt = q => +(((q.custom ? S.custom[q.id] : S.prog[q.id]) || {}).doneAt) || 0;
+  const gains = st.qs.filter(q => q.s === "done").map(q => ({ at: doneAt(q), xp: q.xp }));
+  st.lines.filter(x => x.done).forEach(x => { const at = Math.max(...x.subs.map(doneAt)); gains.push({ at, xp: x.g.bonus }); events.push({ at, line: x.g }); });
+  gains.sort((a, b) => a.at - b.at);
   let xp = 0, lvl = 0;
-  done.forEach(d => { xp += d.q.xp; const n = Math.min(LEVELS.length - 1, Math.floor(xp / st.total * LEVELS.length)); if (n > lvl) { lvl = n; events.push({ at: d.at, lv: n }); } });
-  events.sort((a, b) => b.at - a.at || (b.lv != null) - (a.lv != null));
+  gains.forEach(d => { xp += d.xp; const n = Math.min(LEVELS.length - 1, Math.floor(xp / st.total * LEVELS.length)); if (n > lvl) { lvl = n; events.push({ at: d.at, lv: n }); } });
+  const rank = e => e.lv != null ? 2 : e.line ? 1 : 0;
+  events.sort((a, b) => b.at - a.at || rank(b) - rank(a));
   return { st, events };
 }
 function openHistory() {
@@ -1073,7 +1122,8 @@ function openHistory() {
   events.forEach(e => {
     const d = e.at ? new Date(e.at).toLocaleDateString(locale(), { weekday: "short", day: "numeric", month: "long", year: "numeric" }) : t("earlier");
     if (d !== day) { html += (day === null ? "" : "</div>") + `<div class="tl-day">${esc(d)}</div><div class="tl">`; day = d; }
-    if (e.lv != null) html += `<div class="tl-item lvup"><span aria-hidden="true">⭐</span><span class="tt">${esc(t("lvReached"))} ${t("lv")}.${e.lv + 1} ${esc(LEVELS[e.lv][L()])}</span></div>`;
+    if (e.line) html += `<div class="tl-item lvup" style="background:var(--st-done)"><span aria-hidden="true">${e.line.icon}</span><span class="tt">${esc(t("lineDone"))} ${esc(e.line.t[L()])}</span><span class="sub">${esc(t("bonus"))} +${e.line.bonus} XP</span></div>`;
+    else if (e.lv != null) html += `<div class="tl-item lvup"><span aria-hidden="true">⭐</span><span class="tt">${esc(t("lvReached"))} ${t("lv")}.${e.lv + 1} ${esc(LEVELS[e.lv][L()])}</span></div>`;
     else html += `<div class="tl-item"><span class="tag" style="background:${stBg[e.s] || "var(--paper)"}">${esc(t("st_" + e.s))}</span><span class="tt">${esc(e.q.title)}</span>
       <span class="sub">${[e.s === "done" ? "+" + e.q.xp + " XP" : "", e.at ? time(e.at) : "", name(e.by)].filter(Boolean).map(esc).join(" · ")}</span></div>`;
   });
@@ -1085,6 +1135,7 @@ function openHistory() {
         <div class="row" style="justify-content:space-between"><b class="display" style="font-size:18px">${t("lv")}.${st.lvIdx + 1} ${esc(LEVELS[st.lvIdx][L()])}</b><span class="small muted">${st.earned} / ${st.total} XP</span></div>
         <div class="xpbar" style="margin-top:6px"><i style="width:${Math.round(st.earned / st.total * 100)}%"></i></div>
         <div class="tiles" style="margin-top:10px">
+          <div class="tile"><div class="k">${esc(t("mainQuest"))}</div><div class="v">${st.lines.filter(x => x.done).length} / ${st.lines.length}</div></div>
           <div class="tile"><div class="k">${esc(t("doneCount"))}</div><div class="v">${cnt("done")} / ${st.qs.length}</div></div>
           <div class="tile"><div class="k">${esc(t("st_progress"))}</div><div class="v">${cnt("progress")}</div></div>
           <div class="tile"><div class="k">${esc(t("st_pending"))}</div><div class="v">${cnt("pending")}</div></div>
@@ -1135,8 +1186,8 @@ function openWardrobe(kind) {
 /* ---------- feedback ---------- */
 let toastTimer;
 function toast(msg) { $("#toastRoot").innerHTML = `<div class="toast">${esc(msg)}</div>`; clearTimeout(toastTimer); toastTimer = setTimeout(() => { $("#toastRoot").innerHTML = ""; }, 2200); }
-function celebrate(xp, before) {
-  toast("+" + xp + " " + t("xpGain"));
+function celebrate(xp, before, line) {
+  toast(line ? line.icon + " " + t("lineDone") + " +" + (xp + line.bonus) + " " + t("xpGain") : "+" + xp + " " + t("xpGain"));
   const reduce = window.matchMedia && window.matchMedia("(prefers-reduced-motion: reduce)").matches;
   if (!reduce) for (let i = 0; i < 22; i++) {
     const p = document.createElement("span"); p.className = "petal";

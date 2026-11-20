@@ -237,67 +237,71 @@ def to_excel(src):
 
 
 # ------------------------------------------------------------------ Daftar Tugas
+# Columns: A No | B Tahap | C Tema | D Tugas | E 업무 | F Penanggung jawab | G Berlaku | H Tenggat | I Sisa waktu
+#          J Status | K Keterangan | L Catatan | M Tenggat manual | N Uraian | O 설명 | P Tautan | hidden Q b, R m, S ev, T auto, U tight
 qs = wb.create_sheet("Daftar Tugas")
-cols = ["No.", "Tahap / 단계", "Tugas", "업무", "Penanggung jawab / 담당", "Berlaku / 해당", "Tenggat / 마감일", "Sisa waktu / 남은 기간",
+cols = ["No.", "Tahap / 단계", "Tema / 테마", "Tugas", "업무", "Penanggung jawab / 담당", "Berlaku / 해당", "Tenggat / 마감일", "Sisa waktu / 남은 기간",
         "Status / 상태", "Keterangan / 비고", "Catatan / 메모", "Tenggat manual (opsional) / 수동 마감일", "Uraian", "설명", "Tautan / 링크",
         "b", "m", "ev", "auto", "tight"]
-header(qs, 1, cols, [5, 22, 40, 32, 22, 9, 13, 13, 22, 16, 30, 16, 60, 50, 28, 5, 5, 5, 12, 6])
-qs.freeze_panes = "D2"
-order = {a["id"]: i for i, a in enumerate(DATA["areas"])}
-quests = sorted(DATA["quests"], key=lambda q: (order[q["a"]], -q["b"] if q["b"] > 0 else 10000 - q["b"]))
+header(qs, 1, cols, [5, 20, 24, 40, 32, 22, 9, 13, 13, 22, 16, 30, 16, 60, 50, 28, 5, 5, 5, 12, 6])
+qs.freeze_panes = "E2"
+GROUPS = {g["id"]: g for g in DATA["groups"]}
+THEME = {gid: FORMAL["groups"][gid][0] + " / " + FORMAL["groups"][gid][1] for gid in GROUPS}
+gorder = {g["id"]: i for i, g in enumerate(DATA["groups"])}
+quests = sorted(DATA["quests"], key=lambda q: (gorder[q["g"]], -q["b"] if q["b"] > 0 else 10000 - q["b"]))
 for n, q in enumerate(quests, 1):
     r = n + 1
     fm = FORMAL["quests"][q["id"]]
-    for ci, v in enumerate([n, AREA[q["a"]], fm["t"][0], fm["t"][1], WHO[q["w"]]], 1):
+    for ci, v in enumerate([n, AREA[q["a"]], THEME[q["g"]], fm["t"][0], fm["t"][1], WHO[q["w"]]], 1):
         qs.cell(row=r, column=ci, value=v)
-    qs.cell(row=r, column=6, value=f'=IF({to_excel(q.get("c"))},"Ya","Tidak")')
-    qs.cell(row=r, column=16, value=q["b"])
-    qs.cell(row=r, column=17, value=q["m"])
-    qs.cell(row=r, column=18, value=q.get("ev", ""))
-    base = f'IF(AND(R{r}<>"",R{r}=f_second,f_date2<>""),f_date2,f_wedding)'
-    qs.cell(row=r, column=19, value=f"=IF(P{r}<=0,{base}-P{r},MAX(f_start,{base}-MAX(Q{r},ROUND(P{r}*f_ratio,0))))")
-    qs.cell(row=r, column=20, value=f"=AND(P{r}>0,{base}-MAX(Q{r},ROUND(P{r}*f_ratio,0))<f_start)")
-    qs.cell(row=r, column=7, value=f'=IF(L{r}<>"",L{r},S{r})')
-    qs.cell(row=r, column=8, value=f'=IF(F{r}="Ya",G{r}-TODAY(),"")')
-    qs.cell(row=r, column=9, value=ST0)
-    qs.cell(row=r, column=10, value=f'=IF(F{r}<>"Ya","",IF(AND(I{r}<>"{DONE}",G{r}<TODAY()),"{LATE}",IF(AND(T{r},L{r}="",I{r}<>"{DONE}"),"{TIGHT}","")))')
-    qs.cell(row=r, column=13, value=fm["d"][0])
-    qs.cell(row=r, column=14, value=fm["d"][1])
+    qs.cell(row=r, column=7, value=f'=IF({to_excel(q.get("c"))},"Ya","Tidak")')
+    qs.cell(row=r, column=17, value=q["b"])
+    qs.cell(row=r, column=18, value=q["m"])
+    qs.cell(row=r, column=19, value=q.get("ev", ""))
+    base = f'IF(AND(S{r}<>"",S{r}=f_second,f_date2<>""),f_date2,f_wedding)'
+    qs.cell(row=r, column=20, value=f"=IF(Q{r}<=0,{base}-Q{r},MAX(f_start,{base}-MAX(R{r},ROUND(Q{r}*f_ratio,0))))")
+    qs.cell(row=r, column=21, value=f"=AND(Q{r}>0,{base}-MAX(R{r},ROUND(Q{r}*f_ratio,0))<f_start)")
+    qs.cell(row=r, column=8, value=f'=IF(M{r}<>"",M{r},T{r})')
+    qs.cell(row=r, column=9, value=f'=IF(G{r}="Ya",H{r}-TODAY(),"")')
+    qs.cell(row=r, column=10, value=ST0)
+    qs.cell(row=r, column=11, value=f'=IF(G{r}<>"Ya","",IF(AND(J{r}<>"{DONE}",H{r}<TODAY()),"{LATE}",IF(AND(U{r},M{r}="",J{r}<>"{DONE}"),"{TIGHT}","")))')
+    qs.cell(row=r, column=14, value=fm["d"][0])
+    qs.cell(row=r, column=15, value=fm["d"][1])
     if q.get("l"):
-        c = qs.cell(row=r, column=15, value=q["l"])
+        c = qs.cell(row=r, column=16, value=q["l"])
         c.hyperlink = q["l"]
 last_q = len(quests) + 1
 row = last_q + 1
-qs.cell(row=row, column=3, value="Tugas tambahan (isi tahap, tugas, dan tenggat manual) / 추가 업무").font = F(bold=True, italic=True)
+qs.cell(row=row, column=4, value="Tugas tambahan (isi tahap, tema, tugas, dan tenggat manual) / 추가 업무").font = F(bold=True, italic=True)
 custom_start = row + 1
 last_row = custom_start + 19
 for r in range(custom_start, last_row + 1):
-    qs.cell(row=r, column=1, value=f'=IF(C{r}="","",ROW()-1)')
-    qs.cell(row=r, column=6, value=f'=IF(C{r}="","","Ya")')
-    qs.cell(row=r, column=7, value=f'=IF(L{r}="","",L{r})')
-    qs.cell(row=r, column=8, value=f'=IF(AND(C{r}<>"",L{r}<>""),L{r}-TODAY(),"")')
-    qs.cell(row=r, column=10, value=f'=IF(AND(C{r}<>"",L{r}<>"",I{r}<>"{DONE}",L{r}<TODAY()),"{LATE}","")')
-    for ci in (2, 3, 4, 5):
+    qs.cell(row=r, column=1, value=f'=IF(D{r}="","",ROW()-1)')
+    qs.cell(row=r, column=7, value=f'=IF(D{r}="","","Ya")')
+    qs.cell(row=r, column=8, value=f'=IF(M{r}="","",M{r})')
+    qs.cell(row=r, column=9, value=f'=IF(AND(D{r}<>"",M{r}<>""),M{r}-TODAY(),"")')
+    qs.cell(row=r, column=11, value=f'=IF(AND(D{r}<>"",M{r}<>"",J{r}<>"{DONE}",M{r}<TODAY()),"{LATE}","")')
+    for ci in (2, 3, 4, 5, 6):
         qs.cell(row=r, column=ci).fill = INPUT
 for r in list(range(2, last_q + 1)) + list(range(custom_start, last_row + 1)):
-    for ci in range(1, 21):
+    for ci in range(1, 22):
         c = qs.cell(row=r, column=ci)
         c.font, c.border, c.alignment = F(size=9), BOX, WRAP
-    for ci in (7, 12, 19):
+    for ci in (8, 13, 20):
         qs.cell(row=r, column=ci).number_format = DATE_FMT
-    qs.cell(row=r, column=8).number_format = DAYS_FMT
-    for ci in (9, 11, 12):
+    qs.cell(row=r, column=9).number_format = DAYS_FMT
+    for ci in (10, 12, 13):
         qs.cell(row=r, column=ci).fill = INPUT
-dv_list(qs, STATUSES, f"I2:I{last_row}")
+dv_list(qs, STATUSES, f"J2:J{last_row}")
 dv_list(qs, list(AREA.values()), f"B{custom_start}:B{last_row}")
-for c in "PQRST":
+for c in "QRSTU":
     qs.column_dimensions[c].hidden = True
-qs.auto_filter.ref = f"A1:O{last_row}"
-rng = f"A2:O{last_row}"
-qs.conditional_formatting.add(rng, FormulaRule(formula=['$F2="Tidak"'], font=Font(name=FONT, color="BFBFBF"), stopIfTrue=True))
-qs.conditional_formatting.add(rng, FormulaRule(formula=[f'$I2="{DONE}"'], fill=fill("E2EFDA")))
-qs.conditional_formatting.add(f"J2:J{last_row}", CellIsRule(operator="equal", formula=[f'"{LATE}"'], fill=fill("F8CBAD"), font=Font(name=FONT, bold=True, color="9C0006")))
-qs.conditional_formatting.add(f"J2:J{last_row}", CellIsRule(operator="equal", formula=[f'"{TIGHT}"'], fill=fill("FFE699")))
+qs.auto_filter.ref = f"A1:P{last_row}"
+rng = f"A2:P{last_row}"
+qs.conditional_formatting.add(rng, FormulaRule(formula=['$G2="Tidak"'], font=Font(name=FONT, color="BFBFBF"), stopIfTrue=True))
+qs.conditional_formatting.add(rng, FormulaRule(formula=[f'$J2="{DONE}"'], fill=fill("E2EFDA")))
+qs.conditional_formatting.add(f"K2:K{last_row}", CellIsRule(operator="equal", formula=[f'"{LATE}"'], fill=fill("F8CBAD"), font=Font(name=FONT, bold=True, color="9C0006")))
+qs.conditional_formatting.add(f"K2:K{last_row}", CellIsRule(operator="equal", formula=[f'"{TIGHT}"'], fill=fill("FFE699")))
 
 # ------------------------------------------------------------------ Anggaran
 bs = wb.create_sheet("Anggaran")
@@ -376,14 +380,14 @@ vs.freeze_panes = "B5"
 # ------------------------------------------------------------------ Ringkasan
 ds = wb.create_sheet("Ringkasan", 1)
 ds.sheet_view.showGridLines = False
-for c, w in zip("ABCDEF", [3, 40, 18, 18, 14, 12]):
+for c, w in zip("ABCDEF", [3, 46, 18, 18, 14, 12]):
     ds.column_dimensions[c].width = w
 ds["B1"] = '=IF(OR(Pengaturan!C4="",Pengaturan!C8=""),"Ringkasan Persiapan Pernikahan","Ringkasan Persiapan Pernikahan "&Pengaturan!C4&" dan "&Pengaturan!C8)'
 ds["B1"].font = F(bold=True, size=14)
 ds["B2"] = "Seluruh angka dihitung otomatis. / 모든 수치는 자동으로 계산됩니다."
 ds["B2"].font = F(italic=True, size=9, color="595959")
 TS = "'Daftar Tugas'"
-QF, QI, QB, QJ, QH = (f"{TS}!${c}$2:${c}${last_row}" for c in "FIBJH")
+QF, QI, QB, QJ, QH, QC = (f"{TS}!${c}$2:${c}${last_row}" for c in "GJBKIC")
 ds["B4"] = "Progres / 진행 현황"
 ds["B4"].font = F(bold=True, size=11)
 kpis = [
@@ -420,6 +424,27 @@ for a in DATA["areas"]:
         ds.cell(row=r, column=ci).border = BOX
         ds.cell(row=r, column=ci).font = F()
 ds.conditional_formatting.add(f"E{first}:E{r}", DataBarRule(start_type="num", start_value=0, end_type="num", end_value=1, color="5B9BD5"))
+
+r += 2
+ds.cell(row=r, column=2, value="Progres per tema / 테마별 진행").font = F(bold=True, size=11)
+ds.cell(row=r + 1, column=2, value="Tema dengan 0 tugas berlaku tidak relevan untuk pilihan pada lembar Pengaturan.").font = F(italic=True, size=9, color="595959")
+r += 2
+for ci, lab in enumerate(["Tema / 테마", "Berlaku / 해당", "Selesai / 완료", "Persentase / 비율", "Terlambat / 지연"], 2):
+    c = ds.cell(row=r, column=ci, value=lab)
+    c.font, c.fill, c.border, c.alignment = F(bold=True), HEAD, BOX, CENTER
+tfirst = r + 1
+for g in DATA["groups"]:
+    r += 1
+    ds.cell(row=r, column=2, value=THEME[g["id"]])
+    ds.cell(row=r, column=3, value=f'=COUNTIFS({QC},B{r},{QF},"Ya")')
+    ds.cell(row=r, column=4, value=f'=COUNTIFS({QC},B{r},{QF},"Ya",{QI},"{DONE}")')
+    ds.cell(row=r, column=5, value=f"=IF(C{r}=0,0,D{r}/C{r})").number_format = "0%"
+    ds.cell(row=r, column=6, value=f'=COUNTIFS({QC},B{r},{QJ},"{LATE}")')
+    for ci in range(2, 7):
+        ds.cell(row=r, column=ci).border = BOX
+        ds.cell(row=r, column=ci).font = F()
+ds.conditional_formatting.add(f"E{tfirst}:E{r}", DataBarRule(start_type="num", start_value=0, end_type="num", end_value=1, color="70AD47"))
+ds.conditional_formatting.add(f"B{tfirst}:F{r}", FormulaRule(formula=[f"$C{tfirst}=0"], font=Font(name=FONT, color="BFBFBF")))
 
 r += 2
 ds.cell(row=r, column=2, value="Anggaran / 예산").font = F(bold=True, size=11)
