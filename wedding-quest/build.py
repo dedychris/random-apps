@@ -21,4 +21,12 @@ web = ("<!DOCTYPE html>\n<html lang=\"id\">\n<head>\n<meta charset=\"utf-8\">\n"
 (here / "web").mkdir(exist_ok=True)
 (here / "web" / "Index.html").write_text(web, encoding="utf-8")
 shutil.copy(here / "src" / "Code.gs", here / "web" / "Code.gs")
+
+# GitHub Pages copy (repo-root docs/): same page, talking to the Apps Script deployment as an API.
+API_URL = "https://script.google.com/macros/s/AKfycbxUxUF28OJ87brLOvb_Q9PD9kd4EVQIjJFNrKfCrLhH80ZcBNfo0qk6D1amBUmESTPn/exec"
+docs = here.parent / "docs"
+docs.mkdir(exist_ok=True)
+pages = web.replace('<base target="_top">\n', "").replace("<script>\n\"use strict\";", f'<script>window.WQ_API = "{API_URL}";</script>\n<script>\n"use strict";', 1)
+assert "window.WQ_API" in pages
+(docs / "index.html").write_text(pages, encoding="utf-8")
 print("built", len(page), "bytes,", len(data["quests"]), "quests")

@@ -56,3 +56,38 @@ Catatan:
 2. **Deploy → Manage deployments** → klik ikon pensil → **Version: New version** → **Deploy**.
 
 Link-nya tetap sama dan datanya tidak hilang.
+
+---
+
+# Versi GitHub Pages (disarankan untuk HP)
+
+Kalau Chrome login ke lebih dari satu akun Google, link `script.google.com/.../exec` bisa gagal dibuka ("tidak dapat membuka file").
+Versi GitHub Pages tidak kena masalah ini: halamannya ada di `https://dedychris.github.io/random-apps/`, dan data tetap disimpan di Google Sheet yang sama lewat script tadi.
+
+## A. Perbarui script di Google (wajib, sekali)
+
+1. Buka editor Apps Script, klik `Code.gs`, ganti seluruh isinya dengan `Code.gs` versi baru (ada fungsi `doPost`). Jangan lupa isi lagi PIN kalian di baris atas.
+2. Klik **Save**.
+3. **Deploy → Manage deployments** → ikon pensil → **Version: New version** → **Deploy**.
+   Jangan bikin "New deployment", supaya link `/exec`-nya tetap sama (link itu sudah tertanam di halaman GitHub).
+
+## B. Jadikan repo public
+
+GitHub Pages gratis hanya untuk repo public.
+
+1. Buka https://github.com/dedychris/random-apps → **Settings**.
+2. Gulir paling bawah ke **Danger Zone** → **Change visibility** → **Make public**, lalu konfirmasi.
+
+Isi repo ini hanya kode dan daftar quest. PIN kalian tidak ada di repo (PIN hanya ada di editor Apps Script).
+
+## C. Nyalakan GitHub Pages
+
+1. Masih di **Settings**, buka menu **Pages** di kiri.
+2. **Source:** `Deploy from a branch`.
+3. **Branch:** pilih `claude/modest-lamport-4bvq95`, folder `/docs`, lalu **Save**.
+4. Tunggu 1–3 menit, lalu refresh. Di atas akan muncul "Your site is live at https://dedychris.github.io/random-apps/".
+
+## D. Pakai
+
+Buka `https://dedychris.github.io/random-apps/` di HP, masukkan PIN, lalu **Add to Home screen**.
+Datanya sama dengan versi `/exec`, jadi apa pun yang sudah diisi tetap ada.

@@ -442,7 +442,12 @@ const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2
 
 /* Google Apps Script backend: the page is served by the script, data lives in the owner's Google Sheet. */
 let GAS = false, gasRev = 0, gasPending = 0, gasTimer = null;
-const gasCall = (fn, ...args) => new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
+const API = typeof window.WQ_API === "string" ? window.WQ_API : "";
+const gasCall = (fn, ...args) => API
+  // text/plain keeps this a simple CORS request (no preflight), which Apps Script accepts
+  ? fetch(API, { method: "POST", headers: { "Content-Type": "text/plain;charset=utf-8" }, body: JSON.stringify({ fn, args }) })
+      .then(r => r.json()).then(j => { if (!j.ok) throw new Error(j.error); return j.result; })
+  : new Promise((res, rej) => google.script.run.withSuccessHandler(res).withFailureHandler(rej)[fn](...args));
 const getPin = () => { try { return localStorage.getItem("wq-pin") || ""; } catch (e) { return ""; } };
 function gasApply(r) {
   if (!r || r.same) return;
@@ -492,7 +497,7 @@ function connectGAS() {
 }
 
 async function connect() {
-  if (typeof google !== "undefined" && google.script && google.script.run) { connectGAS(); return; }
+  if (API || (typeof google !== "undefined" && google.script && google.script.run)) { connectGAS(); return; }
   let db = null;
   try { db = window.claude && window.claude.use ? await window.claude.use("db") : null; } catch (e) { db = null; }
   if (!db) { S.mode = "local"; localLoad(); renderAll(); return; }

@@ -6,6 +6,9 @@
  * 1) Ganti PIN di bawah (boleh angka atau kata). Kosongkan ('') kalau tidak mau pakai PIN.
  * 2) Jalankan fungsi setup sekali dari editor untuk memberi izin.
  * 3) Deploy > New deployment > Web app: Execute as "Me", Who has access "Anyone".
+ *
+ * Halaman bisa dibuka langsung dari link /exec, atau dari GitHub Pages
+ * (docs/index.html) yang memanggil doPost di bawah sebagai API.
  */
 const PIN = '1234';
 
@@ -16,6 +19,21 @@ function doGet() {
   return HtmlService.createHtmlOutputFromFile('Index')
     .setTitle('Wedding Quest')
     .addMetaTag('viewport', 'width=device-width, initial-scale=1, viewport-fit=cover');
+}
+
+/** JSON API for the GitHub Pages version: body {fn, args}. */
+function doPost(e) {
+  let out;
+  try {
+    const req = JSON.parse(e.postData.contents);
+    const args = Array.isArray(req.args) ? req.args : [];
+    if (req.fn === 'getAll') out = { ok: true, result: getAll(args[0], args[1]) };
+    else if (req.fn === 'put') out = { ok: true, result: put(args[0], args[1], args[2], args[3]) };
+    else out = { ok: false, error: 'Fungsi tidak dikenal' };
+  } catch (err) {
+    out = { ok: false, error: String(err && err.message || err) };
+  }
+  return ContentService.createTextOutput(JSON.stringify(out)).setMimeType(ContentService.MimeType.JSON);
 }
 
 function setup() {
